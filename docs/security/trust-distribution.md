@@ -6,6 +6,19 @@ Trust distribution installs the Root CA certificate into systems that need to va
 
 For service configuration, `ironroot-client request-cert` writes both `tls.crt` and `fullchain.crt`. Browsers trust the service only when the Root CA is installed in the OS or browser trust store and the service presents a chain from the leaf certificate to the Intermediate CA.
 
+## Which File Is The Trust Anchor?
+
+Install the public Root CA certificate as trust material:
+
+```text
+root-ca.crt
+trust-bundle/root-ca.crt
+```
+
+Do not install private keys into trust stores. Do not copy `root-ca.key` or `intermediate-ca.key` to client machines.
+
+The Intermediate certificate is normally served as part of the certificate chain, not installed as the primary trust anchor. Use `fullchain.crt` or `ca-chain.crt` for services that need to present or validate the chain.
+
 Linux:
 
 ```bash

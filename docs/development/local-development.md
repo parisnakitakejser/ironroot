@@ -219,6 +219,61 @@ ironroot-admin ca inspect \
   .localdev/pki/intermediate/intermediate-ca.crt
 ```
 
+## Install Local Trust On A Linux Machine
+
+After you request a test certificate, the most common question is which CA file should be installed as the trusted certificate.
+
+Install the **Root CA public certificate** as the trust anchor:
+
+```text
+.localdev/pki/root/root-ca.crt
+```
+
+or the equivalent trust-bundle copy:
+
+```text
+.localdev/pki/root/trust-bundle/root-ca.crt
+```
+
+Do **not** install these files as system trust:
+
+- `.localdev/pki/root/root-ca.key`: Root CA private key. Never copy this to a Linux machine for trust.
+- `.localdev/pki/intermediate/intermediate-ca.key`: Intermediate private key. This belongs only on the IronRoot server.
+- `.localdev/pki/intermediate/intermediate-ca.crt`: public Intermediate CA certificate. Services should present it in the chain, but normal OS trust should anchor at the Root CA.
+
+The Intermediate CA certificate is still important. It is included in:
+
+```text
+.localdev/pki/intermediate/ca-chain.crt
+.localdev/certs/demo.local/ca-chain.crt
+.localdev/certs/demo.local/fullchain.crt
+```
+
+Use those chain files when configuring a service such as nginx, Caddy, or an application that needs to serve the leaf certificate together with the Intermediate. Trust stores should receive the Root CA certificate.
+
+Debian/Ubuntu:
+
+```bash
+sudo cp .localdev/pki/root/root-ca.crt /usr/local/share/ca-certificates/ironroot-local.crt
+sudo update-ca-certificates
+```
+
+Fedora/RHEL:
+
+```bash
+sudo cp .localdev/pki/root/root-ca.crt /etc/pki/ca-trust/source/anchors/ironroot-local.crt
+sudo update-ca-trust
+```
+
+Verify the installed trust path with OpenSSL:
+
+```bash
+openssl verify \
+  -CAfile .localdev/pki/root/root-ca.crt \
+  -untrusted .localdev/pki/intermediate/intermediate-ca.crt \
+  .localdev/certs/demo.local/tls.crt
+```
+
 Run the first-run bootstrap guide:
 
 ```bash
