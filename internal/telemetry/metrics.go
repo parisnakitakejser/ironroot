@@ -26,6 +26,7 @@ type Metrics struct {
 	TokenValidationFailures metric.Int64Counter
 	CLICommandDuration      metric.Float64Histogram
 	CLICommandErrors        metric.Int64Counter
+	SecurityCheckResults    metric.Int64Counter
 }
 
 func Instruments() Metrics {
@@ -40,6 +41,7 @@ func Instruments() Metrics {
 		m.TokenValidationFailures, _ = meter.Int64Counter("pki_bootstrap_token_validation_failures_total")
 		m.CLICommandDuration, _ = meter.Float64Histogram("pki_cli_command_duration_seconds")
 		m.CLICommandErrors, _ = meter.Int64Counter("pki_cli_command_errors_total")
+		m.SecurityCheckResults, _ = meter.Int64Counter("pki_security_check_results_total")
 	})
 	return m
 }

@@ -50,8 +50,12 @@ nav:
   - PKI Concepts: pki-concepts/index.md
   - Observability: observability/index.md
   - Security: security/index.md
+  - Security Operations:
+      - Bootstrap Guide: security/bootstrap-guide.md
+      - Security Check: security/security-check.md
+      - Offline Root Handling: security/offline-root-handling.md
+      - Host Hardening: security/host-hardening.md
   - Migration: migration/index.md
   - Development: development/index.md
   - Contributing: contributing/index.md
   - Roadmap: roadmap/index.md
-

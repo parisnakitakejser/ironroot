@@ -14,3 +14,9 @@
 
 Report vulnerabilities using the process in `SECURITY.md`.
 
+Operational security pages:
+
+- [First-run bootstrap guide](bootstrap-guide.md)
+- [Security check command](security-check.md)
+- [Offline Root CA handling](offline-root-handling.md)
+- [Host hardening](host-hardening.md)

@@ -39,6 +39,9 @@ jobs:
       - name: End-to-end tests
         run: make test-e2e
 
+      - name: Security check smoke test
+        run: go run ./cmd/ironroot-admin security-check --config ./examples/config.dev.yaml --output json --fail-on critical
+
   docs:
     name: Documentation build
     runs-on: ubuntu-latest

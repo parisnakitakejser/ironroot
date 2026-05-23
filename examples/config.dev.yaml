@@ -1,0 +1,26 @@
+server:
+  address: ":8443"
+  tls:
+    cert_file: ""
+    key_file: ""
+database:
+  driver: sqlite
+  dsn: "file:./data/ironroot-dev.db?_foreign_keys=on"
+pki:
+  root_file: "./pki/root-ca.crt"
+  chain_file: "./pki/ca-chain.crt"
+  intermediate_cert_file: "./pki/intermediate.crt"
+  intermediate_key_file: "./pki/intermediate.key"
+  intermediate_key_pass: ""
+  default_lifetime: 2160h
+  renew_before: 720h
+telemetry:
+  enabled: false
+  service_name: ironroot-server
+  service_version: 0.1.0
+  deployment_environment: ci
+  otlp_endpoint: localhost:4317
+  otlp_protocol: grpc
+  sampling_ratio: 1.0
+log:
+  level: info

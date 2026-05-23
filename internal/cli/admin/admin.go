@@ -4,30 +4,50 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log/slog"
 	"os"
 	"time"
 
 	"github.com/google/uuid"
 	"github.com/spf13/cobra"
+	"go.opentelemetry.io/otel"
 
 	"github.com/ironroot/ironroot/internal/config"
 	ironcrypto "github.com/ironroot/ironroot/internal/crypto"
 	"github.com/ironroot/ironroot/internal/db"
+	"github.com/ironroot/ironroot/internal/securitycheck"
 	"github.com/ironroot/ironroot/internal/telemetry"
 	apiclient "github.com/ironroot/ironroot/pkg/client"
 )
 
+type ExitError struct {
+	Code int
+	Err  error
+}
+
+func (e ExitError) Error() string {
+	if e.Err == nil {
+		return fmt.Sprintf("exit code %d", e.Code)
+	}
+	return e.Err.Error()
+}
+
+func (e ExitError) Unwrap() error { return e.Err }
+func (e ExitError) ExitCode() int { return e.Code }
+
 func New() *cobra.Command {
 	var server string
 	cmd := &cobra.Command{
-		Use:   "ironroot-admin",
-		Short: "Admin CLI for IronRoot PKI",
+		Use:          "ironroot-admin",
+		Short:        "Admin CLI for IronRoot PKI",
+		SilenceUsage: true,
 		PersistentPreRun: func(cmd *cobra.Command, args []string) {
+			slog.SetDefault(telemetry.NewLogger(os.Stderr, "info"))
 			_, _ = telemetry.Configure(cmd.Context(), config.Default().Telemetry, "ironroot-admin")
 		},
 	}
 	cmd.PersistentFlags().StringVar(&server, "server", "http://localhost:8443", "IronRoot API URL")
-	cmd.AddCommand(initServer(), importIntermediate(), createToken(), apiCommand("list-tokens", &server, func(ctx context.Context, c *apiclient.Client) error {
+	cmd.AddCommand(initServer(), importIntermediate(), createToken(), bootstrap(), securityCheck(), apiCommand("list-tokens", &server, func(ctx context.Context, c *apiclient.Client) error {
 		return json.NewEncoder(os.Stdout).Encode(map[string]string{"status": "list-tokens is local-store only in this MVP; use server DB tooling"})
 	}), apiCommand("list-certs", &server, func(ctx context.Context, c *apiclient.Client) error {
 		entries, err := c.Audit(ctx)
@@ -42,6 +62,94 @@ func New() *cobra.Command {
 	cmd.AddCommand(&cobra.Command{Use: "rotate-intermediate", Short: "Import a new active intermediate generation", RunE: func(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("rotate-intermediate design is documented; API mutation is intentionally deferred")
 	}})
+	return cmd
+}
+
+func bootstrap() *cobra.Command {
+	var configPath, outputChecklist string
+	var nonInteractive, acknowledgeRisk bool
+	cmd := &cobra.Command{Use: "bootstrap", Short: "Guide first-time operators through secure IronRoot setup", RunE: func(cmd *cobra.Command, args []string) error {
+		start := time.Now()
+		ctx, span := otel.Tracer("ironroot-admin").Start(cmd.Context(), "ironroot-admin bootstrap")
+		defer span.End()
+		if _, err := config.Load(configPath); err != nil {
+			telemetry.RecordCommand(ctx, "bootstrap", start, err)
+			return ExitError{Code: 2, Err: err}
+		}
+		err := securitycheck.RunBootstrapGuide(securitycheck.BootstrapOptions{
+			NonInteractive:  nonInteractive,
+			AcknowledgeRisk: acknowledgeRisk,
+			OutputChecklist: outputChecklist,
+			In:              cmd.InOrStdin(),
+			Out:             cmd.OutOrStdout(),
+		})
+		telemetry.RecordCommand(ctx, "bootstrap", start, err)
+		if err != nil {
+			return ExitError{Code: 2, Err: err}
+		}
+		return nil
+	}}
+	cmd.Flags().StringVar(&configPath, "config", "", "IronRoot config file")
+	cmd.Flags().BoolVar(&nonInteractive, "non-interactive", false, "run without prompts for automation")
+	cmd.Flags().BoolVar(&acknowledgeRisk, "acknowledge-risk", false, "deliberately acknowledge bootstrap assumptions or unconfirmed prompts")
+	cmd.Flags().StringVar(&outputChecklist, "output-checklist", "", "write Markdown bootstrap checklist")
+	return cmd
+}
+
+func securityCheck() *cobra.Command {
+	var configPath, outputValue, failOnValue, writeReport string
+	cmd := &cobra.Command{Use: "security-check", Short: "Run IronRoot host, PKI, config, runtime, and observability checks", RunE: func(cmd *cobra.Command, args []string) error {
+		start := time.Now()
+		ctx, span := otel.Tracer("ironroot-admin").Start(cmd.Context(), "ironroot-admin security-check")
+		defer span.End()
+		cfg, err := config.Load(configPath)
+		if err != nil {
+			telemetry.RecordCommand(ctx, "security-check", start, err)
+			return ExitError{Code: 2, Err: err}
+		}
+		format, err := securitycheck.ParseOutputFormat(outputValue)
+		if err != nil {
+			telemetry.RecordCommand(ctx, "security-check", start, err)
+			return ExitError{Code: 2, Err: err}
+		}
+		failOn, err := securitycheck.ParseSeverity(failOnValue)
+		if err != nil {
+			telemetry.RecordCommand(ctx, "security-check", start, err)
+			return ExitError{Code: 2, Err: err}
+		}
+		report := securitycheck.DefaultRunner().Run(ctx, securitycheck.Target{Config: cfg, ConfigPath: configPath, Now: time.Now().UTC()})
+		if err := securitycheck.Render(cmd.OutOrStdout(), report, format); err != nil {
+			telemetry.RecordCommand(ctx, "security-check", start, err)
+			return ExitError{Code: 2, Err: err}
+		}
+		if writeReport != "" {
+			f, err := os.Create(writeReport)
+			if err != nil {
+				telemetry.RecordCommand(ctx, "security-check", start, err)
+				return ExitError{Code: 2, Err: err}
+			}
+			defer f.Close()
+			reportFormat := securitycheck.OutputMarkdown
+			if format == securitycheck.OutputJSON {
+				reportFormat = securitycheck.OutputJSON
+			}
+			if err := securitycheck.Render(f, report, reportFormat); err != nil {
+				telemetry.RecordCommand(ctx, "security-check", start, err)
+				return ExitError{Code: 2, Err: err}
+			}
+		}
+		slog.InfoContext(ctx, "security-check summary", "passed", report.Summary.Passed, "warnings", report.Summary.Warnings, "failed", report.Summary.Failed, "skipped", report.Summary.Skipped)
+		var exitErr error
+		if securitycheck.FailsThreshold(report.Checks, failOn) {
+			exitErr = ExitError{Code: 1, Err: fmt.Errorf("security-check found failures at or above %s", failOn)}
+		}
+		telemetry.RecordCommand(ctx, "security-check", start, exitErr)
+		return exitErr
+	}}
+	cmd.Flags().StringVar(&configPath, "config", "", "IronRoot config file")
+	cmd.Flags().StringVar(&outputValue, "output", "table", "output format: table, json, markdown")
+	cmd.Flags().StringVar(&failOnValue, "fail-on", "critical", "fail when failed checks are at or above severity: info, low, medium, high, critical")
+	cmd.Flags().StringVar(&writeReport, "write-report", "", "write a report file; markdown by default, json when --output json")
 	return cmd
 }
 

@@ -2,12 +2,10 @@
 
 ![Apache 2.0](https://img.shields.io/badge/license-Apache%202.0-blue)
 ![Go](https://img.shields.io/badge/go-1.26.3-00ADD8)
-![CI](https://github.com/ironroot/ironroot/actions/workflows/ci.yaml/badge.svg)
+![CI](https://github.com/ironroot/ironroot/actions/workflows/pr-checks.yaml/badge.svg)
 ![Docs](https://img.shields.io/badge/docs-MkDocs-526CFE)
 
 > Airgap-first trust infrastructure
-
-![./logos/logo-social.png]()
 
 <!-- Logo placeholder: docs/assets/logo-placeholder.png -->
 
@@ -53,6 +51,19 @@ bin/ironroot-client enroll --server http://localhost:8443 --token <token>
 bin/ironroot-client request-cert --server http://localhost:8443 --enrollment-id <id> --dns node-01.local --out certs
 ```
 
+## First-time security bootstrap
+
+Before exposing IronRoot, run the bootstrap guide and security check:
+
+```bash
+ironroot-admin bootstrap --output-checklist ./ironroot-security-checklist.md
+ironroot-admin security-check --output table
+ironroot-admin security-check --output markdown --write-report security-report.md
+ironroot-admin security-check --fail-on high
+```
+
+The bootstrap guide focuses on offline Root CA handling, encrypted Intermediate CA storage, API TLS, filesystem permissions, backups, audit logging, OpenTelemetry posture, and recovery readiness.
+
 ## OpenTelemetry
 
 IronRoot instruments server endpoints and client commands. CLI spans propagate W3C Trace Context to the REST API so traces show enrollment, CSR validation, signing, metadata storage, and response flow.
@@ -86,4 +97,3 @@ make docs-build
 ## License
 
 IronRoot is licensed under the Apache License 2.0.
-
