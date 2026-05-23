@@ -4,6 +4,7 @@
 ![Go](https://img.shields.io/badge/go-1.26.3-00ADD8)
 ![CI](https://github.com/ironroot/ironroot/actions/workflows/pr-checks.yaml/badge.svg)
 ![Docs](https://img.shields.io/badge/docs-MkDocs-526CFE)
+![Website](https://github.com/ironroot/ironroot/actions/workflows/docs-website.yaml/badge.svg)
 
 > Airgap-first trust infrastructure
 
@@ -148,9 +149,17 @@ Air-gapped environments should mirror both `ghcr.io/OWNER/ironroot:<version>` an
 Documentation is built with MkDocs Material:
 
 ```bash
+make docs-install
 make docs-serve
 make docs-build
+make docs-deploy-local
 ```
+
+The public documentation website is published from the generated `site/` output to the `website` branch for GitHub Pages. Configure GitHub Pages to serve from branch `website` and folder `/`.
+
+Website placeholder: `https://OWNER.github.io/ironroot/`
+
+Contributors should edit source docs under `docs/`, preview with `make docs-serve`, and run `make docs-build` before opening a pull request. Do not edit the generated `website` branch by hand.
 
 ## Project links
 

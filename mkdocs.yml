@@ -1,5 +1,6 @@
 site_name: IronRoot
 site_description: Airgap-first trust infrastructure
+site_url: https://OWNER.github.io/ironroot/
 repo_url: https://github.com/ironroot/ironroot
 theme:
   name: material
@@ -135,6 +136,7 @@ nav:
   - Development:
       - Contributing: contributing/index.md
       - Local Development: development/index.md
+      - Docs Development: development/docs-development.md
       - Project Structure: development/project-structure.md
       - CI/CD: development/ci-cd.md
       - Testing: development/testing.md
