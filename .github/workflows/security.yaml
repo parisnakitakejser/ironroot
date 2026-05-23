@@ -62,7 +62,6 @@ jobs:
   trivy-container:
     name: Trivy container scan
     runs-on: ubuntu-latest
-    if: hashFiles('Containerfile') != ''
     steps:
       - name: Checkout
         uses: actions/checkout@v4
