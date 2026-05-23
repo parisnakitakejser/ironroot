@@ -1,6 +1,7 @@
 package ca
 
 import (
+	"context"
 	"crypto/x509"
 	"encoding/pem"
 	"path/filepath"
@@ -23,7 +24,7 @@ func TestLoadAuthorityAndSignCSR(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	issued, err := auth.SignCSR(string(csr), []string{"node.local"}, 90*24*time.Hour)
+	issued, err := auth.SignCSR(context.Background(), string(csr), []string{"node.local"}, 90*24*time.Hour)
 	if err != nil {
 		t.Fatal(err)
 	}

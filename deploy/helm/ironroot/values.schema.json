@@ -63,7 +63,33 @@
             "serviceName": { "type": "string" },
             "serviceVersion": { "type": "string" },
             "environment": { "type": "string" },
-            "samplingRatio": { "type": "number", "minimum": 0, "maximum": 1 }
+            "samplingRatio": { "type": "number", "minimum": 0, "maximum": 1 },
+            "resourceAttributes": { "type": "string" },
+            "traces": {
+              "type": "object",
+              "properties": {
+                "enabled": { "type": "boolean" }
+              }
+            },
+            "metrics": {
+              "type": "object",
+              "properties": {
+                "enabled": { "type": "boolean" }
+              }
+            },
+            "logs": {
+              "type": "object",
+              "properties": {
+                "enabled": { "type": "boolean" }
+              }
+            },
+            "prometheus": {
+              "type": "object",
+              "properties": {
+                "enabled": { "type": "boolean" },
+                "path": { "type": "string" }
+              }
+            }
           }
         }
       }

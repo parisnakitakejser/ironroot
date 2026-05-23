@@ -1,0 +1,53 @@
+{
+  "title": "IronRoot Overview",
+  "schemaVersion": 39,
+  "version": 1,
+  "tags": ["ironroot", "pki"],
+  "panels": [
+    {
+      "type": "timeseries",
+      "title": "API Requests",
+      "targets": [
+        {
+          "expr": "rate(pki_api_requests_total[5m])"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "API p95 Latency",
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, rate(pki_api_request_duration_seconds_bucket[5m]))"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Certificate Operations",
+      "targets": [
+        {
+          "expr": "increase(pki_certificates_issued_total[1h])",
+          "legendFormat": "issued"
+        },
+        {
+          "expr": "increase(pki_certificates_renewed_total[1h])",
+          "legendFormat": "renewed"
+        },
+        {
+          "expr": "increase(pki_certificates_revoked_total[1h])",
+          "legendFormat": "revoked"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Security Check Failures",
+      "targets": [
+        {
+          "expr": "increase(pki_security_check_results_total{status=\"fail\"}[1h])"
+        }
+      ]
+    }
+  ]
+}

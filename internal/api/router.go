@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
@@ -32,6 +33,13 @@ func NewRouter(dep Dependencies) http.Handler {
 	r.Use(otelhttp.NewMiddleware("ironroot-api"))
 	r.Get("/healthz", h.healthz)
 	r.Get("/readyz", h.readyz)
+	if dep.Config.Telemetry.Prometheus.Enabled {
+		path := dep.Config.Telemetry.Prometheus.Path
+		if path == "" {
+			path = "/metrics"
+		}
+		r.Handle(path, promhttp.Handler())
+	}
 	r.Get("/v1/ca/root", h.root)
 	r.Get("/v1/ca/chain", h.chain)
 	r.Post("/v1/enroll", h.enroll)
@@ -51,15 +59,18 @@ func metricsMiddleware(next http.Handler) http.Handler {
 		metrics := telemetry.Instruments()
 		attrs := metricAttrs(r, rw.status)
 		metrics.APIRequests.Add(r.Context(), 1, metric.WithAttributes(attrs...))
+		if rw.status >= 500 {
+			metrics.APIRequestFailures.Add(r.Context(), 1, metric.WithAttributes(attrs...))
+		}
 		metrics.APIRequestDuration.Record(r.Context(), time.Since(start).Seconds(), metric.WithAttributes(attrs...))
 	})
 }
 
 func metricAttrs(r *http.Request, status int) []attribute.KeyValue {
 	return []attribute.KeyValue{
-		attribute.String("http.method", r.Method),
-		attribute.String("http.route", r.URL.Path),
-		attribute.Int("http.status_code", status),
+		attribute.String("method", r.Method),
+		attribute.String("route", r.URL.Path),
+		attribute.Int("status_code", status),
 	}
 }
 

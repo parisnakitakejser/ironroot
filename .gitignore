@@ -36,3 +36,7 @@ go.work.sum
 
 # env file
 .env
+
+### Python docs environment
+.venv-docs/
+site/

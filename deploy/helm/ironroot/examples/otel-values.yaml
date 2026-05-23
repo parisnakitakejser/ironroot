@@ -6,6 +6,13 @@ config:
     serviceName: ironroot
     environment: production
     samplingRatio: 0.25
+    resourceAttributes: "deployment.environment=production,service.namespace=pki"
+    prometheus:
+      enabled: true
+      path: /metrics
+
+serviceMonitor:
+  enabled: true
 
 pki:
   existingSecret: ironroot-ca

@@ -54,6 +54,16 @@ config:
     serviceVersion: ""
     environment: production
     samplingRatio: 1
+    resourceAttributes: ""
+    traces:
+      enabled: true
+    metrics:
+      enabled: true
+    logs:
+      enabled: true
+    prometheus:
+      enabled: true
+      path: /metrics
   extra: {}
 
 persistence:

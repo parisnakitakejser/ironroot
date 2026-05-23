@@ -1,6 +1,7 @@
 package api
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"net/http"
@@ -9,6 +10,8 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/metric"
 
 	"github.com/ironroot/ironroot/internal/ca"
 	"github.com/ironroot/ironroot/internal/db"
@@ -34,11 +37,13 @@ func (h handler) chain(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h handler) enroll(w http.ResponseWriter, r *http.Request) {
+	ctx, span := telemetry.StartSpan(r.Context(), "enrollment.workflow")
+	defer span.End()
 	var req enrollment.Request
 	if !decode(w, r, &req) {
 		return
 	}
-	resp, err := (enrollment.Service{Store: h.dep.Store}).ValidateAndEnroll(r.Context(), req)
+	resp, err := (enrollment.Service{Store: h.dep.Store}).ValidateAndEnroll(ctx, req)
 	if err != nil {
 		telemetry.Instruments().EnrollmentFailures.Add(r.Context(), 1)
 		if errors.Is(err, enrollment.ErrInvalidToken) {
@@ -48,7 +53,7 @@ func (h handler) enroll(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	telemetry.Instruments().Enrollments.Add(r.Context(), 1)
-	h.dep.Audit.Record(r.Context(), "enrollment.created", req.Hostname, resp.EnrollmentID, map[string]string{"machine_id": req.MachineID})
+	h.dep.Audit.Record(ctx, "enrollment.created", req.Hostname, resp.EnrollmentID, map[string]string{"machine_id": req.MachineID})
 	writeJSON(w, http.StatusCreated, resp)
 }
 
@@ -69,6 +74,8 @@ type certificateResponse struct {
 }
 
 func (h handler) requestCertificate(w http.ResponseWriter, r *http.Request) {
+	ctx, span := telemetry.StartSpan(r.Context(), "certificate.issue.workflow")
+	defer span.End()
 	var req certificateRequest
 	if !decode(w, r, &req) {
 		return
@@ -77,64 +84,72 @@ func (h handler) requestCertificate(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, errors.New("enrollment_id is required"))
 		return
 	}
-	en, err := h.dep.Store.GetEnrollment(r.Context(), req.EnrollmentID)
+	en, err := h.dep.Store.GetEnrollment(ctx, req.EnrollmentID)
 	if err != nil {
 		writeError(w, http.StatusUnauthorized, errors.New("unknown enrollment"))
 		return
 	}
-	issued, err := h.dep.Authority.SignCSR(req.CSRPEM, req.DNSNames, h.dep.Config.PKI.DefaultLifetime)
+	issued, err := h.dep.Authority.SignCSR(ctx, req.CSRPEM, req.DNSNames, h.dep.Config.PKI.DefaultLifetime)
 	if err != nil {
 		writeError(w, http.StatusBadRequest, err)
 		return
 	}
-	if err := h.ensureCAConfig(r); err != nil {
+	if err := h.ensureCAConfig(ctx); err != nil {
 		writeError(w, http.StatusInternalServerError, err)
 		return
 	}
-	err = h.dep.Store.StoreIssuedCertificate(r.Context(), db.IssuedCertificate{
+	err = h.dep.Store.StoreIssuedCertificate(ctx, db.IssuedCertificate{
 		Serial: issued.Serial, CAID: h.dep.Authority.CAID(), EnrollmentID: en.ID, Subject: en.Hostname, DNSNames: strings.Join(req.DNSNames, ","), PEM: issued.CertPEM, NotBefore: issued.NotBefore, NotAfter: issued.NotAfter, CreatedAt: time.Now().UTC(),
 	})
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, err)
 		return
 	}
-	telemetry.Instruments().CertificatesIssued.Add(r.Context(), 1)
-	h.dep.Audit.Record(r.Context(), "certificate.issued", en.Hostname, issued.Serial, map[string]string{"enrollment_id": en.ID})
+	attrs := metric.WithAttributes(attribute.String("certificate_type", "server"), attribute.String("issuer", telemetry.SanitizeLabel(h.dep.Authority.CAID())), attribute.String("status", "issued"))
+	telemetry.Instruments().CertificatesIssued.Add(ctx, 1, attrs)
+	telemetry.Instruments().ActiveCertificates.Add(ctx, 1, attrs)
+	h.dep.Audit.Record(ctx, "certificate.issued", en.Hostname, issued.Serial, map[string]string{"enrollment_id": en.ID})
 	writeJSON(w, http.StatusCreated, certResponse(h.dep, issued))
 }
 
 func (h handler) renewCertificate(w http.ResponseWriter, r *http.Request) {
+	ctx, span := telemetry.StartSpan(r.Context(), "certificate.renew.workflow")
+	defer span.End()
 	var req certificateRequest
 	if !decode(w, r, &req) {
 		return
 	}
 	oldSerial := r.URL.Query().Get("serial")
 	if oldSerial != "" {
-		old, err := h.dep.Store.GetIssuedCertificate(r.Context(), oldSerial)
+		old, err := h.dep.Store.GetIssuedCertificate(ctx, oldSerial)
 		if err == nil && time.Until(old.NotAfter) > h.dep.Config.PKI.RenewBefore {
 			writeError(w, http.StatusBadRequest, errors.New("certificate is not inside renewal window"))
 			return
 		}
 	}
-	issued, err := h.dep.Authority.SignCSR(req.CSRPEM, req.DNSNames, h.dep.Config.PKI.DefaultLifetime)
+	issued, err := h.dep.Authority.SignCSR(ctx, req.CSRPEM, req.DNSNames, h.dep.Config.PKI.DefaultLifetime)
 	if err != nil {
 		writeError(w, http.StatusBadRequest, err)
 		return
 	}
-	if err := h.ensureCAConfig(r); err != nil {
+	if err := h.ensureCAConfig(ctx); err != nil {
 		writeError(w, http.StatusInternalServerError, err)
 		return
 	}
-	if err := h.dep.Store.StoreIssuedCertificate(r.Context(), db.IssuedCertificate{Serial: issued.Serial, CAID: h.dep.Authority.CAID(), EnrollmentID: req.EnrollmentID, Subject: req.EnrollmentID, DNSNames: strings.Join(req.DNSNames, ","), PEM: issued.CertPEM, NotBefore: issued.NotBefore, NotAfter: issued.NotAfter, CreatedAt: time.Now().UTC()}); err != nil {
+	if err := h.dep.Store.StoreIssuedCertificate(ctx, db.IssuedCertificate{Serial: issued.Serial, CAID: h.dep.Authority.CAID(), EnrollmentID: req.EnrollmentID, Subject: req.EnrollmentID, DNSNames: strings.Join(req.DNSNames, ","), PEM: issued.CertPEM, NotBefore: issued.NotBefore, NotAfter: issued.NotAfter, CreatedAt: time.Now().UTC()}); err != nil {
 		writeError(w, http.StatusInternalServerError, err)
 		return
 	}
-	telemetry.Instruments().CertificatesRenewed.Add(r.Context(), 1)
-	h.dep.Audit.Record(r.Context(), "certificate.renewed", req.EnrollmentID, issued.Serial, map[string]string{"previous_serial": oldSerial})
+	attrs := metric.WithAttributes(attribute.String("certificate_type", "server"), attribute.String("issuer", telemetry.SanitizeLabel(h.dep.Authority.CAID())), attribute.String("status", "renewed"))
+	telemetry.Instruments().CertificatesRenewed.Add(ctx, 1, attrs)
+	telemetry.Instruments().ActiveCertificates.Add(ctx, 1, attrs)
+	h.dep.Audit.Record(ctx, "certificate.renewed", req.EnrollmentID, issued.Serial, map[string]string{"previous_serial": oldSerial})
 	writeJSON(w, http.StatusCreated, certResponse(h.dep, issued))
 }
 
 func (h handler) revokeCertificate(w http.ResponseWriter, r *http.Request) {
+	ctx, span := telemetry.StartSpan(r.Context(), "certificate.revoke.workflow")
+	defer span.End()
 	var req struct {
 		Serial string `json:"serial"`
 		Reason string `json:"reason"`
@@ -149,12 +164,14 @@ func (h handler) revokeCertificate(w http.ResponseWriter, r *http.Request) {
 	if req.Reason == "" {
 		req.Reason = "unspecified"
 	}
-	if err := h.dep.Store.RevokeCertificate(r.Context(), db.RevokedCertificate{Serial: req.Serial, Reason: req.Reason, RevokedAt: time.Now().UTC()}); err != nil {
+	if err := h.dep.Store.RevokeCertificate(ctx, db.RevokedCertificate{Serial: req.Serial, Reason: req.Reason, RevokedAt: time.Now().UTC()}); err != nil {
 		writeError(w, http.StatusInternalServerError, err)
 		return
 	}
-	telemetry.Instruments().CertificatesRevoked.Add(r.Context(), 1)
-	h.dep.Audit.Record(r.Context(), "certificate.revoked", "admin", req.Serial, map[string]string{"reason": req.Reason})
+	attrs := metric.WithAttributes(attribute.String("certificate_type", "server"), attribute.String("issuer", "unknown"), attribute.String("status", "revoked"))
+	telemetry.Instruments().CertificatesRevoked.Add(ctx, 1, attrs)
+	telemetry.Instruments().ActiveCertificates.Add(ctx, -1, attrs)
+	h.dep.Audit.Record(ctx, "certificate.revoked", "admin", req.Serial, map[string]string{"reason": req.Reason})
 	writeJSON(w, http.StatusOK, map[string]string{"status": "revoked"})
 }
 
@@ -180,9 +197,9 @@ func certResponse(dep Dependencies, issued ca.Issued) certificateResponse {
 	return certificateResponse{Serial: issued.Serial, CertPEM: issued.CertPEM, ChainPEM: dep.Authority.ChainPEM(), RootPEM: dep.Authority.RootPEM(), NotBefore: issued.NotBefore.Format(time.RFC3339), NotAfter: issued.NotAfter.Format(time.RFC3339), RenewBefore: issued.NotAfter.Add(-dep.Config.PKI.RenewBefore).Format(time.RFC3339)}
 }
 
-func (h handler) ensureCAConfig(r *http.Request) error {
+func (h handler) ensureCAConfig(ctx context.Context) error {
 	now := time.Now().UTC()
-	return h.dep.Store.UpsertCAConfig(r.Context(), db.CAConfig{
+	return h.dep.Store.UpsertCAConfig(ctx, db.CAConfig{
 		CAID:                    h.dep.Authority.CAID(),
 		Name:                    "default",
 		RootFingerprint:         h.dep.Authority.CAID(),

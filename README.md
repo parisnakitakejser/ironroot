@@ -66,7 +66,21 @@ The bootstrap guide focuses on offline Root CA handling, encrypted Intermediate 
 
 ## OpenTelemetry
 
-IronRoot instruments server endpoints and client commands. CLI spans propagate W3C Trace Context to the REST API so traces show enrollment, CSR validation, signing, metadata storage, and response flow.
+IronRoot is observability-first. The server, admin CLI, client CLI, REST API, enrollment lifecycle, certificate issuance, renewal, revocation, bootstrap, security-check, audit writes, and database operations emit telemetry.
+
+- Traces use W3C Trace Context so CLI operations continue through server-side API, CA, DB, and audit spans.
+- Metrics cover API latency, enrollment failures, certificate lifecycle activity, security-check results, bootstrap runs, database latency, and telemetry exporter health.
+- JSON logs include `trace_id` and `span_id` when a span is active, without printing private keys, bootstrap token values, or sensitive CA material.
+- OTLP gRPC, OTLP HTTP, and Prometheus `/metrics` are supported.
+
+Local observability examples live in `examples/otel/` and Grafana starter dashboards live in `examples/grafana/`.
+
+```bash
+podman-compose -f examples/otel/podman-compose.yaml up -d
+OTEL_EXPORTER_OTLP_ENDPOINT=localhost:4317 OTEL_SERVICE_NAME=ironroot bin/ironroot-server
+```
+
+IronRoot works with OpenTelemetry Collector, Prometheus, Tempo, Loki, and Grafana. See `docs/observability/` for trace, metric, log, dashboard, and alerting guidance.
 
 ## Kubernetes and Podman
 

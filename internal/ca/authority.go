@@ -1,6 +1,7 @@
 package ca
 
 import (
+	"context"
 	"crypto"
 	"crypto/rand"
 	"crypto/rsa"
@@ -15,10 +16,11 @@ import (
 	"time"
 
 	"github.com/ironroot/ironroot/internal/config"
+	"github.com/ironroot/ironroot/internal/telemetry"
 )
 
 type Authority interface {
-	SignCSR(csrPEM string, dnsNames []string, lifetime time.Duration) (Issued, error)
+	SignCSR(context.Context, string, []string, time.Duration) (Issued, error)
 	ChainPEM() string
 	RootPEM() string
 	CAID() string
@@ -33,7 +35,7 @@ type Issued struct {
 
 type DisabledAuthority struct{}
 
-func (DisabledAuthority) SignCSR(string, []string, time.Duration) (Issued, error) {
+func (DisabledAuthority) SignCSR(context.Context, string, []string, time.Duration) (Issued, error) {
 	return Issued{}, errors.New("CA authority is not configured")
 }
 func (DisabledAuthority) ChainPEM() string { return "" }
@@ -98,16 +100,21 @@ func LoadAuthority(cfg config.PKIConfig) (*FileAuthority, error) {
 	return &FileAuthority{cert: cert, key: signer, chain: string(chainBytes), root: string(rootBytes), caID: hex.EncodeToString(fp[:])}, nil
 }
 
-func (a *FileAuthority) SignCSR(csrPEM string, dnsNames []string, lifetime time.Duration) (Issued, error) {
+func (a *FileAuthority) SignCSR(ctx context.Context, csrPEM string, dnsNames []string, lifetime time.Duration) (Issued, error) {
+	ctx, span := telemetry.StartSpan(ctx, "ca.sign_csr")
 	block, _ := pem.Decode([]byte(csrPEM))
 	if block == nil {
-		return Issued{}, errors.New("invalid CSR PEM")
+		err := errors.New("invalid CSR PEM")
+		telemetry.EndSpan(span, err)
+		return Issued{}, err
 	}
 	csr, err := x509.ParseCertificateRequest(block.Bytes)
 	if err != nil {
+		telemetry.EndSpan(span, err)
 		return Issued{}, err
 	}
 	if err := csr.CheckSignature(); err != nil {
+		telemetry.EndSpan(span, err)
 		return Issued{}, err
 	}
 	if len(dnsNames) == 0 {
@@ -115,12 +122,15 @@ func (a *FileAuthority) SignCSR(csrPEM string, dnsNames []string, lifetime time.
 	}
 	for _, name := range dnsNames {
 		if strings.TrimSpace(name) == "" {
-			return Issued{}, errors.New("dns names must not be empty")
+			err := errors.New("dns names must not be empty")
+			telemetry.EndSpan(span, err)
+			return Issued{}, err
 		}
 	}
 	serialLimit := new(big.Int).Lsh(big.NewInt(1), 128)
 	serial, err := rand.Int(rand.Reader, serialLimit)
 	if err != nil {
+		telemetry.EndSpan(span, err)
 		return Issued{}, err
 	}
 	notBefore := time.Now().UTC().Add(-1 * time.Minute)
@@ -136,8 +146,10 @@ func (a *FileAuthority) SignCSR(csrPEM string, dnsNames []string, lifetime time.
 	}
 	der, err := x509.CreateCertificate(rand.Reader, tpl, a.cert, csr.PublicKey, a.key)
 	if err != nil {
+		telemetry.EndSpan(span, err)
 		return Issued{}, err
 	}
+	telemetry.EndSpan(span, nil)
 	return Issued{
 		Serial: serial.Text(16), CertPEM: string(pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: der})), NotBefore: notBefore, NotAfter: notAfter,
 	}, nil

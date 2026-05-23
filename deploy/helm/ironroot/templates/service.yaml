@@ -4,9 +4,16 @@ metadata:
   name: {{ include "ironroot.fullname" . }}
   labels:
     {{- include "ironroot.labels" . | nindent 4 }}
-  {{- with .Values.service.annotations }}
+  {{- if or .Values.service.annotations .Values.config.telemetry.prometheus.enabled }}
   annotations:
+    {{- with .Values.service.annotations }}
     {{- toYaml . | nindent 4 }}
+    {{- end }}
+    {{- if .Values.config.telemetry.prometheus.enabled }}
+    prometheus.io/scrape: "true"
+    prometheus.io/path: {{ .Values.config.telemetry.prometheus.path | quote }}
+    prometheus.io/port: {{ .Values.service.port | quote }}
+    {{- end }}
   {{- end }}
 spec:
   type: {{ .Values.service.type }}

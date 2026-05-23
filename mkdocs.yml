@@ -59,7 +59,21 @@ nav:
   - CLI: cli/index.md
   - API: api/index.md
   - PKI Concepts: pki-concepts/index.md
-  - Observability: observability/index.md
+  - Observability:
+      - Overview: observability/index.md
+      - OpenTelemetry: observability/opentelemetry.md
+      - Traces: observability/traces.md
+      - Metrics: observability/metrics.md
+      - Logs: observability/logs.md
+      - Collector: observability/collector.md
+      - Prometheus: observability/prometheus.md
+      - Grafana: observability/grafana.md
+      - Tempo: observability/tempo.md
+      - Loki: observability/loki.md
+      - Kubernetes: observability/kubernetes.md
+      - Podman: observability/podman.md
+      - Binary: observability/binary.md
+      - Alerting: observability/alerting.md
   - Security: security/index.md
   - Security Operations:
       - Bootstrap Guide: security/bootstrap-guide.md

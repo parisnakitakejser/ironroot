@@ -2,9 +2,12 @@ GO ?= go
 IMAGE ?= localhost/ironroot:dev
 CONTAINERFILE ?= Containerfile
 HELM_CHART ?= deploy/helm/ironroot
+DOCS_PYTHON ?= /usr/bin/python3
+DOCS_VENV ?= .venv-docs
+MKDOCS ?= $(DOCS_VENV)/bin/mkdocs
 GOFILES := $(shell find . -name '*.go' -not -path './vendor/*')
 
-.PHONY: build fmt fmt-check vet lint test test-e2e docs-serve docs-build container-build security-govulncheck helm-lint helm-template helm-package helm-test coverage
+.PHONY: build fmt fmt-check vet lint test test-e2e docs-setup docs-serve docs-build container-build security-govulncheck helm-lint helm-template helm-package helm-test coverage
 
 build:
 	$(GO) build -o bin/ironroot-server ./cmd/server
@@ -38,11 +41,17 @@ test-e2e:
 		echo "tests/e2e not present; skipping e2e tests"; \
 	fi
 
-docs-serve:
-	mkdocs serve
+docs-setup:
+	@if [ ! -x "$(MKDOCS)" ]; then \
+		$(DOCS_PYTHON) -m venv $(DOCS_VENV); \
+		$(DOCS_VENV)/bin/python -m pip install -r docs/requirements.txt; \
+	fi
 
-docs-build:
-	mkdocs build --strict
+docs-serve: docs-setup
+	$(MKDOCS) serve
+
+docs-build: docs-setup
+	$(MKDOCS) build --strict
 
 container-build:
 	@if command -v podman >/dev/null 2>&1; then \

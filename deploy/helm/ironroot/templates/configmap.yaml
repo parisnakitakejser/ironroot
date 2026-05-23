@@ -30,5 +30,20 @@ data:
       otlp_endpoint: {{ .Values.config.telemetry.endpoint | quote }}
       otlp_protocol: {{ .Values.config.telemetry.protocol | quote }}
       sampling_ratio: {{ .Values.config.telemetry.samplingRatio }}
+      traces:
+        enabled: {{ .Values.config.telemetry.traces.enabled }}
+      metrics:
+        enabled: {{ .Values.config.telemetry.metrics.enabled }}
+      logs:
+        enabled: {{ .Values.config.telemetry.logs.enabled }}
+      exporter:
+        protocol: {{ .Values.config.telemetry.protocol | quote }}
+        endpoint: {{ .Values.config.telemetry.endpoint | quote }}
+        insecure: true
+      sampling:
+        ratio: {{ .Values.config.telemetry.samplingRatio }}
+      prometheus:
+        enabled: {{ .Values.config.telemetry.prometheus.enabled }}
+        path: {{ .Values.config.telemetry.prometheus.path | quote }}
     log:
       level: {{ .Values.config.logLevel | quote }}
