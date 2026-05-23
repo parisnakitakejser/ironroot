@@ -25,3 +25,15 @@ The storage layer is interface-based. SQLite is the default backend for the MVP,
 
 The schema supports multiple CA generations using `ca_id`, fingerprints, status, and validity windows. This prepares IronRoot for root migration without forcing existing certificates to rotate immediately.
 
+## Learn the Architecture
+
+Read these pages before deploying IronRoot in production:
+
+- [Component Architecture](components.md)
+- [Offline Root CA](offline-root-ca.md)
+- [Online Intermediate CA](online-intermediate-ca.md)
+- [IronRoot API Server](api-server.md)
+- [CLI Architecture](cli.md)
+- [OpenTelemetry Architecture](telemetry.md)
+- [Security Boundaries](trust-boundaries.md)
+- [Airgap-First Architecture](airgap.md)

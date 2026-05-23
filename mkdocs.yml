@@ -37,11 +37,20 @@ nav:
   - Overview: index.md
   - Architecture:
       - Overview: architecture/index.md
+      - Components: architecture/components.md
+      - Offline Root CA: architecture/offline-root-ca.md
+      - Online Intermediate CA: architecture/online-intermediate-ca.md
+      - API Server: architecture/api-server.md
+      - CLI Architecture: architecture/cli.md
+      - OpenTelemetry: architecture/telemetry.md
+      - Security Boundaries: architecture/trust-boundaries.md
+      - Airgap-First: architecture/airgap.md
       - Diagrams: diagrams/index.md
   - Getting Started:
       - Quick Start: getting-started/quick-start.md
       - Setup Guide: getting-started/setup.md
   - Installation:
+      - Binary: installation/binary.md
       - Podman: podman/index.md
       - Kubernetes: kubernetes/index.md
       - Helm Installation: kubernetes/helm-installation.md
@@ -62,6 +71,7 @@ nav:
       - Helm Releases: release/helm-releases.md
   - Airgap:
       - Mirror Helm Chart: airgap/mirroring-helm-chart.md
+  - Operations: operations/index.md
   - Development: development/index.md
   - Contributing: contributing/index.md
   - Roadmap: roadmap/index.md

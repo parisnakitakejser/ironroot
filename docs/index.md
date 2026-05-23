@@ -32,3 +32,13 @@ Alternative taglines used across the project:
 - Podman container build and Kubernetes manifests
 - Apache 2.0 open source project structure
 
+## Architecture-first learning path
+
+New operators should understand the trust model before installing IronRoot:
+
+1. [Component Architecture](architecture/components.md)
+2. [Offline Root CA](architecture/offline-root-ca.md)
+3. [Online Intermediate CA](architecture/online-intermediate-ca.md)
+4. [IronRoot API Server](architecture/api-server.md)
+5. [Security Boundaries](architecture/trust-boundaries.md)
+6. [Operations](operations/index.md)
