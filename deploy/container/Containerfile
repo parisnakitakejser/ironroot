@@ -1,0 +1,20 @@
+FROM docker.io/library/golang:1.26 AS build
+WORKDIR /src
+COPY go.mod go.sum* ./
+RUN go mod download
+COPY . .
+RUN CGO_ENABLED=1 go build -o /out/ironroot-server ./cmd/server && \
+    CGO_ENABLED=1 go build -o /out/ironroot-admin ./cmd/ironroot-admin && \
+    CGO_ENABLED=1 go build -o /out/ironroot-client ./cmd/ironroot-client
+
+FROM gcr.io/distroless/base-debian12:nonroot
+WORKDIR /
+COPY --from=build /out/ironroot-server /usr/local/bin/ironroot-server
+COPY --from=build /out/ironroot-admin /usr/local/bin/ironroot-admin
+COPY --from=build /out/ironroot-client /usr/local/bin/ironroot-client
+USER nonroot:nonroot
+VOLUME ["/config", "/data", "/pki"]
+EXPOSE 8443
+ENV IRONROOT_CONFIG=/config/config.yaml
+ENTRYPOINT ["/usr/local/bin/ironroot-server"]
+

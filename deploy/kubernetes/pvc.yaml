@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: ironroot-data
+  labels:
+    app.kubernetes.io/name: ironroot
+    app.kubernetes.io/component: pki-server
+spec:
+  accessModes: ["ReadWriteOnce"]
+  resources:
+    requests:
+      storage: 1Gi
+

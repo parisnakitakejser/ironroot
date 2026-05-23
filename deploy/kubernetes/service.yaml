@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: ironroot
+  labels:
+    app.kubernetes.io/name: ironroot
+    app.kubernetes.io/component: pki-server
+spec:
+  selector:
+    app.kubernetes.io/name: ironroot
+    app.kubernetes.io/component: pki-server
+  ports:
+    - name: https
+      port: 8443
+      targetPort: https
+
