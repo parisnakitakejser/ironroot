@@ -1,6 +1,6 @@
 site_name: IronRoot
 site_description: Airgap-first trust infrastructure
-site_url: https://OWNER.github.io/ironroot/
+site_url: https://parisnakitakejser.github.io/ironroot/
 repo_url: https://github.com/ironroot/ironroot
 theme:
   name: material

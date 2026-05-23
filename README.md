@@ -157,7 +157,7 @@ make docs-deploy-local
 
 The public documentation website is published from the generated `site/` output to the `website` branch for GitHub Pages. Configure GitHub Pages to serve from branch `website` and folder `/`.
 
-Website placeholder: `https://OWNER.github.io/ironroot/`
+Website: `https://parisnakitakejser.github.io/ironroot/`
 
 Contributors should edit source docs under `docs/`, preview with `make docs-serve`, and run `make docs-build` before opening a pull request. Do not edit the generated `website` branch by hand.
 
