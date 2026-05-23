@@ -1,0 +1,3 @@
+# Monitoring
+
+Monitor API availability, request latency, enrollment failures, token validation failures, certificate operations, database latency, security-check results, and telemetry exporter health.

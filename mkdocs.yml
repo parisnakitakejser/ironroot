@@ -23,6 +23,7 @@ theme:
         name: Switch to light mode
 markdown_extensions:
   - admonition
+  - attr_list
   - pymdownx.highlight
   - pymdownx.superfences:
       custom_fences:
@@ -44,28 +45,28 @@ nav:
   - Architecture:
       - Overview: architecture/index.md
       - Components: architecture/components.md
-      - Trust Model: architecture/components.md
+      - Trust Model: architecture/trust-model.md
       - Root CA: architecture/offline-root-ca.md
       - Intermediate CA: architecture/online-intermediate-ca.md
       - API Server: architecture/api-server.md
-      - Admin CLI: architecture/cli.md
-      - Client CLI: architecture/cli.md
+      - Admin CLI: architecture/admin-cli.md
+      - Client CLI: architecture/client-cli.md
       - OpenTelemetry: architecture/telemetry.md
       - Security Boundaries: architecture/trust-boundaries.md
       - Airgap Design: architecture/airgap.md
-      - Certificate Lifecycle: pki-concepts/index.md
-      - Root Rotation: migration/index.md
-      - Deployment Models: architecture/components.md
+      - Certificate Lifecycle: architecture/certificate-lifecycle.md
+      - Root Rotation: architecture/root-rotation.md
+      - Deployment Models: architecture/deployment-models.md
       - Diagrams: diagrams/index.md
   - Installation:
       - Binary: installation/binary.md
       - Podman: podman/index.md
-      - Helm Installation: kubernetes/helm-installation.md
-      - Configuration: configuration/index.md
-      - Upgrades: operations/upgrades.md
-      - Uninstall: operations/uninstall.md
-      - Local Development: development/index.md
-      - Airgap Deployment: airgap/overview.md
+      - Helm Installation: installation/helm.md
+      - Configuration: installation/configuration.md
+      - Upgrades: installation/upgrades.md
+      - Uninstall: installation/uninstall.md
+      - Local Development: installation/local-development.md
+      - Airgap Deployment: installation/airgap-deployment.md
   - Security:
       - Overview: security/index.md
       - Bootstrap Guide: security/bootstrap-guide.md
@@ -73,11 +74,11 @@ nav:
       - Offline Root Handling: security/offline-root-handling.md
       - Host Hardening: security/host-hardening.md
       - Trust Distribution: security/trust-distribution.md
-      - Backup Strategy: operations/backups.md
-      - Disaster Recovery: operations/disaster-recovery.md
+      - Backup Strategy: security/backup-strategy.md
+      - Disaster Recovery: security/disaster-recovery.md
       - Threat Model: security/threat-model.md
-      - Kubernetes Security: kubernetes/index.md
-      - Podman Security: podman/index.md
+      - Kubernetes Security: security/kubernetes-security.md
+      - Podman Security: security/podman-security.md
   - Observability:
       - Overview: observability/index.md
       - Traces: observability/traces.md
@@ -89,7 +90,7 @@ nav:
       - Loki: observability/loki.md
       - Prometheus: observability/prometheus.md
       - Alerting: observability/alerting.md
-      - Dashboards: observability/grafana.md
+      - Dashboards: observability/dashboards.md
       - Collector: observability/collector.md
       - Kubernetes: observability/kubernetes.md
       - Podman: observability/podman.md
@@ -98,15 +99,15 @@ nav:
       - Overview: kubernetes/index.md
       - Helm Installation: kubernetes/helm-installation.md
       - Values Reference: kubernetes/values-reference.md
-      - Security: kubernetes/index.md
-      - Observability: observability/kubernetes.md
+      - Security: kubernetes/security.md
+      - Observability: kubernetes/observability.md
   - Airgap:
       - Overview: airgap/overview.md
       - Root CA Handling: airgap/root-ca-handling.md
       - Offline Root Workflow: airgap/offline-signing.md
-      - Artifact Mirroring: airgap/mirroring-images.md
+      - Artifact Mirroring: airgap/artifact-mirroring.md
       - Helm Mirroring: airgap/mirroring-helm.md
-      - Container Mirroring: airgap/mirroring-images.md
+      - Container Mirroring: airgap/container-mirroring.md
       - Binary Distribution: airgap/binary-distribution.md
       - Trust Distribution: airgap/distributing-trust.md
       - Airgap Upgrades: airgap/upgrades.md
@@ -116,35 +117,35 @@ nav:
       - Overview: operations/index.md
       - Certificate Rotation: operations/certificate-rotation.md
       - Intermediate Rotation: operations/intermediate-rotation.md
-      - Root Migration: migration/index.md
+      - Root Migration: operations/root-migration.md
       - Backups: operations/backups.md
       - Restore: operations/restore.md
       - Disaster Recovery: operations/disaster-recovery.md
       - Troubleshooting: operations/troubleshooting.md
       - Performance: operations/performance.md
       - Scaling: operations/scaling.md
-      - Monitoring: observability/index.md
+      - Monitoring: operations/monitoring.md
   - API & CLI:
       - REST API: api/index.md
-      - ironroot-admin: cli/index.md
-      - ironroot-client: cli/index.md
-      - Configuration Reference: configuration/index.md
-      - Environment Variables: configuration/index.md
-      - Examples: getting-started/local-quickstart.md
+      - ironroot-admin: cli/admin.md
+      - ironroot-client: cli/client.md
+      - Configuration Reference: cli/configuration-reference.md
+      - Environment Variables: cli/environment-variables.md
+      - Examples: cli/examples.md
   - Development:
       - Contributing: contributing/index.md
       - Local Development: development/index.md
       - Project Structure: development/project-structure.md
       - CI/CD: development/ci-cd.md
       - Testing: development/testing.md
-      - Release Process: release/helm-releases.md
+      - Release Process: development/release-process.md
       - Helm Development: development/helm.md
       - OpenTelemetry Development: development/opentelemetry.md
   - Community:
-      - Roadmap: roadmap/index.md
-      - Governance: contributing/index.md
-      - Code of Conduct: contributing/index.md
-      - Security Policy: security/index.md
-      - Support: contributing/index.md
-      - Discussions: contributing/index.md
-      - Releases: release/helm-releases.md
+      - Roadmap: community/roadmap.md
+      - Governance: community/governance.md
+      - Code of Conduct: community/code-of-conduct.md
+      - Security Policy: community/security-policy.md
+      - Support: community/support.md
+      - Discussions: community/discussions.md
+      - Releases: community/releases.md
