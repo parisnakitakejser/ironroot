@@ -117,10 +117,16 @@ flowchart TD
 ```bash
 ironroot-client enroll \
   --server http://localhost:8443 \
+  --hostname local-demo \
   --token <token>
 ```
 
+The hostname must match the `--host` value used when the bootstrap token was created. If you omit `--hostname`, the client sends the operating system hostname.
+
 Copy the returned `enrollment_id`.
+
+!!! note "Enrollment ID versus token"
+    Use the UUID returned by `ironroot-client enroll` for `--enrollment-id`. Do not reuse the bootstrap token for certificate requests.
 
 ## 7. Request a Website TLS Certificate
 

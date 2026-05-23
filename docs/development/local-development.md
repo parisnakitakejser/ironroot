@@ -270,8 +270,13 @@ Enroll:
 ```bash
 ironroot-client enroll \
   --server http://localhost:8443 \
+  --hostname demo.local \
   --token <token>
 ```
+
+`--hostname` must match the `ironroot-admin create-token --host` value. Without it, the client sends the machine's OS hostname, which is useful for real hosts but confusing in local demos.
+
+Copy the returned `enrollment_id`. Certificate requests use that UUID, not the bootstrap token.
 
 Request a test certificate:
 

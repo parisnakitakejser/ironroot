@@ -60,7 +60,7 @@ bin/ironroot-server --config ./examples/config.local.yaml
 
 ```bash
 bin/ironroot-admin --config ./examples/config.local.yaml create-token --host local-demo --ttl 24h
-bin/ironroot-client enroll --server http://localhost:8443 --token <token>
+bin/ironroot-client enroll --server http://localhost:8443 --hostname local-demo --token <token>
 bin/ironroot-client request-cert --server http://localhost:8443 --enrollment-id <id> --dns demo.home.arpa --out certs
 ```
 

@@ -29,7 +29,6 @@ IRONROOT_CONFIG=configs/server.yaml bin/ironroot-server
 Enroll a client and request a certificate:
 
 ```bash
-bin/ironroot-client enroll --server http://localhost:8443 --token <token>
+bin/ironroot-client enroll --server http://localhost:8443 --hostname node-01 --token <token>
 bin/ironroot-client request-cert --server http://localhost:8443 --enrollment-id <id> --dns node-01.local --out certs
 ```
-

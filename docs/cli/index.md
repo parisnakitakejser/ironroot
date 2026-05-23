@@ -23,9 +23,8 @@ ironroot-admin migration-status
 
 ```bash
 ironroot-client trust install --server http://localhost:8443 --out trust
-ironroot-client enroll --server http://localhost:8443 --token <token>
+ironroot-client enroll --server http://localhost:8443 --hostname node-01 --token <token>
 ironroot-client request-cert --server http://localhost:8443 --enrollment-id <id> --dns app.internal --out certs
 ironroot-client renew --server http://localhost:8443 --enrollment-id <id> --dns app.internal --out certs
 ironroot-client status --server http://localhost:8443 --serial <serial>
 ```
-

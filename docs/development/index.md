@@ -144,7 +144,7 @@ Use separate terminals for admin and client commands:
 
 ```bash
 ironroot-admin --config ./examples/config.local.yaml create-token --host local-demo --ttl 24h
-ironroot-client enroll --server http://localhost:8443 --token <token>
+ironroot-client enroll --server http://localhost:8443 --hostname local-demo --token <token>
 ```
 
 On Linux, inspect file permissions with `stat` or `ls -l`. On macOS, use `stat -f "%Sp %N"` for BSD-style output.

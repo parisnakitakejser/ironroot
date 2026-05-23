@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/spf13/cobra"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/trace"
@@ -57,9 +58,12 @@ func trust(debug bool) *cobra.Command {
 }
 
 func enroll(debug bool) *cobra.Command {
-	var server, token string
+	var server, token, hostnameOverride string
 	cmd := tracedCommand("enroll", debug, func(ctx context.Context, cmd *cobra.Command, args []string) error {
 		hostname, _ := os.Hostname()
+		if strings.TrimSpace(hostnameOverride) != "" {
+			hostname = strings.TrimSpace(hostnameOverride)
+		}
 		machineID := loadMachineID()
 		resp, err := apiclient.New(server).Enroll(ctx, apiclient.EnrollmentRequest{Token: token, Hostname: hostname, MachineID: machineID, MAC: firstMAC()})
 		if err != nil {
@@ -69,6 +73,7 @@ func enroll(debug bool) *cobra.Command {
 	})
 	cmd.Flags().StringVar(&server, "server", "http://localhost:8443", "IronRoot API URL")
 	cmd.Flags().StringVar(&token, "token", "", "bootstrap token")
+	cmd.Flags().StringVar(&hostnameOverride, "hostname", "", "hostname to enroll; defaults to this machine's OS hostname")
 	_ = cmd.MarkFlagRequired("token")
 	return cmd
 }
@@ -76,6 +81,9 @@ func enroll(debug bool) *cobra.Command {
 func requestCert(debug bool) *cobra.Command {
 	var server, dns, out, enrollmentID string
 	cmd := tracedCommand("request-cert", debug, func(ctx context.Context, cmd *cobra.Command, args []string) error {
+		if err := validateEnrollmentID(enrollmentID); err != nil {
+			return err
+		}
 		names := splitCSV(dns)
 		key, csr, err := ca.GenerateKeyAndCSR(names[0], names)
 		if err != nil {
@@ -101,6 +109,9 @@ func renew(debug bool) *cobra.Command {
 	cmd := tracedCommand("renew", debug, func(ctx context.Context, cmd *cobra.Command, args []string) error {
 		_ = certPath
 		_ = keyPath
+		if err := validateEnrollmentID(enrollmentID); err != nil {
+			return err
+		}
 		names := splitCSV(dns)
 		key, csr, err := ca.GenerateKeyAndCSR(names[0], names)
 		if err != nil {
@@ -118,6 +129,8 @@ func renew(debug bool) *cobra.Command {
 	cmd.Flags().StringVar(&dns, "dns", "", "comma-separated DNS names")
 	cmd.Flags().StringVar(&out, "out", ".", "certificate output directory")
 	cmd.Flags().StringVar(&enrollmentID, "enrollment-id", "", "enrollment id")
+	_ = cmd.MarkFlagRequired("enrollment-id")
+	_ = cmd.MarkFlagRequired("dns")
 	return cmd
 }
 
@@ -170,6 +183,16 @@ func writeBundle(out string, key []byte, resp apiclient.CertificateResponse) err
 		}
 	}
 	return json.NewEncoder(os.Stdout).Encode(resp)
+}
+
+func validateEnrollmentID(value string) error {
+	if strings.TrimSpace(value) == "" {
+		return fmt.Errorf("--enrollment-id is required")
+	}
+	if _, err := uuid.Parse(value); err != nil {
+		return fmt.Errorf("--enrollment-id must be the enrollment_id returned by `ironroot-client enroll`, not the bootstrap token")
+	}
+	return nil
 }
 
 func splitCSV(v string) []string {
