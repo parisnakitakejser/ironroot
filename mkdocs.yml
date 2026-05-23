@@ -4,6 +4,8 @@ repo_url: https://github.com/ironroot/ironroot
 theme:
   name: material
   features:
+    - navigation.tabs
+    - navigation.tabs.sticky
     - navigation.sections
     - navigation.indexes
     - content.code.copy
@@ -34,58 +36,115 @@ markdown_extensions:
 plugins:
   - search
 nav:
-  - Overview: index.md
+  - Getting Started:
+      - Overview: index.md
+      - Local Quick Start: getting-started/local-quickstart.md
+      - Quick Start: getting-started/quick-start.md
+      - Setup Guide: getting-started/setup.md
   - Architecture:
       - Overview: architecture/index.md
       - Components: architecture/components.md
-      - Offline Root CA: architecture/offline-root-ca.md
-      - Online Intermediate CA: architecture/online-intermediate-ca.md
+      - Trust Model: architecture/components.md
+      - Root CA: architecture/offline-root-ca.md
+      - Intermediate CA: architecture/online-intermediate-ca.md
       - API Server: architecture/api-server.md
-      - CLI Architecture: architecture/cli.md
+      - Admin CLI: architecture/cli.md
+      - Client CLI: architecture/cli.md
       - OpenTelemetry: architecture/telemetry.md
       - Security Boundaries: architecture/trust-boundaries.md
-      - Airgap-First: architecture/airgap.md
+      - Airgap Design: architecture/airgap.md
+      - Certificate Lifecycle: pki-concepts/index.md
+      - Root Rotation: migration/index.md
+      - Deployment Models: architecture/components.md
       - Diagrams: diagrams/index.md
-  - Getting Started:
-      - Quick Start: getting-started/quick-start.md
-      - Setup Guide: getting-started/setup.md
   - Installation:
       - Binary: installation/binary.md
       - Podman: podman/index.md
-      - Kubernetes: kubernetes/index.md
       - Helm Installation: kubernetes/helm-installation.md
-      - Helm Values: kubernetes/values-reference.md
-  - Configuration: configuration/index.md
-  - CLI: cli/index.md
-  - API: api/index.md
-  - PKI Concepts: pki-concepts/index.md
-  - Observability:
-      - Overview: observability/index.md
-      - OpenTelemetry: observability/opentelemetry.md
-      - Traces: observability/traces.md
-      - Metrics: observability/metrics.md
-      - Logs: observability/logs.md
-      - Collector: observability/collector.md
-      - Prometheus: observability/prometheus.md
-      - Grafana: observability/grafana.md
-      - Tempo: observability/tempo.md
-      - Loki: observability/loki.md
-      - Kubernetes: observability/kubernetes.md
-      - Podman: observability/podman.md
-      - Binary: observability/binary.md
-      - Alerting: observability/alerting.md
-  - Security: security/index.md
-  - Security Operations:
+      - Configuration: configuration/index.md
+      - Upgrades: operations/upgrades.md
+      - Uninstall: operations/uninstall.md
+      - Local Development: development/index.md
+      - Airgap Deployment: airgap/overview.md
+  - Security:
+      - Overview: security/index.md
       - Bootstrap Guide: security/bootstrap-guide.md
       - Security Check: security/security-check.md
       - Offline Root Handling: security/offline-root-handling.md
       - Host Hardening: security/host-hardening.md
-  - Migration: migration/index.md
-  - Releases:
-      - Helm Releases: release/helm-releases.md
+      - Trust Distribution: security/trust-distribution.md
+      - Backup Strategy: operations/backups.md
+      - Disaster Recovery: operations/disaster-recovery.md
+      - Threat Model: security/threat-model.md
+      - Kubernetes Security: kubernetes/index.md
+      - Podman Security: podman/index.md
+  - Observability:
+      - Overview: observability/index.md
+      - Traces: observability/traces.md
+      - Metrics: observability/metrics.md
+      - Logs: observability/logs.md
+      - OpenTelemetry: observability/opentelemetry.md
+      - Grafana: observability/grafana.md
+      - Tempo: observability/tempo.md
+      - Loki: observability/loki.md
+      - Prometheus: observability/prometheus.md
+      - Alerting: observability/alerting.md
+      - Dashboards: observability/grafana.md
+      - Collector: observability/collector.md
+      - Kubernetes: observability/kubernetes.md
+      - Podman: observability/podman.md
+      - Binary: observability/binary.md
+  - Kubernetes:
+      - Overview: kubernetes/index.md
+      - Helm Installation: kubernetes/helm-installation.md
+      - Values Reference: kubernetes/values-reference.md
+      - Security: kubernetes/index.md
+      - Observability: observability/kubernetes.md
   - Airgap:
-      - Mirror Helm Chart: airgap/mirroring-helm-chart.md
-  - Operations: operations/index.md
-  - Development: development/index.md
-  - Contributing: contributing/index.md
-  - Roadmap: roadmap/index.md
+      - Overview: airgap/overview.md
+      - Root CA Handling: airgap/root-ca-handling.md
+      - Offline Root Workflow: airgap/offline-signing.md
+      - Artifact Mirroring: airgap/mirroring-images.md
+      - Helm Mirroring: airgap/mirroring-helm.md
+      - Container Mirroring: airgap/mirroring-images.md
+      - Binary Distribution: airgap/binary-distribution.md
+      - Trust Distribution: airgap/distributing-trust.md
+      - Airgap Upgrades: airgap/upgrades.md
+      - Airgap Recovery: airgap/recovery.md
+      - Legacy Helm Mirror Page: airgap/mirroring-helm-chart.md
+  - Operations:
+      - Overview: operations/index.md
+      - Certificate Rotation: operations/certificate-rotation.md
+      - Intermediate Rotation: operations/intermediate-rotation.md
+      - Root Migration: migration/index.md
+      - Backups: operations/backups.md
+      - Restore: operations/restore.md
+      - Disaster Recovery: operations/disaster-recovery.md
+      - Troubleshooting: operations/troubleshooting.md
+      - Performance: operations/performance.md
+      - Scaling: operations/scaling.md
+      - Monitoring: observability/index.md
+  - API & CLI:
+      - REST API: api/index.md
+      - ironroot-admin: cli/index.md
+      - ironroot-client: cli/index.md
+      - Configuration Reference: configuration/index.md
+      - Environment Variables: configuration/index.md
+      - Examples: getting-started/local-quickstart.md
+  - Development:
+      - Contributing: contributing/index.md
+      - Local Development: development/index.md
+      - Project Structure: development/project-structure.md
+      - CI/CD: development/ci-cd.md
+      - Testing: development/testing.md
+      - Release Process: release/helm-releases.md
+      - Helm Development: development/helm.md
+      - OpenTelemetry Development: development/opentelemetry.md
+  - Community:
+      - Roadmap: roadmap/index.md
+      - Governance: contributing/index.md
+      - Code of Conduct: contributing/index.md
+      - Security Policy: security/index.md
+      - Support: contributing/index.md
+      - Discussions: contributing/index.md
+      - Releases: release/helm-releases.md

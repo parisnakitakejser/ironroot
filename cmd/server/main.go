@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"errors"
+	"flag"
 	"log/slog"
 	"net/http"
 	"os"
@@ -19,10 +20,13 @@ import (
 )
 
 func main() {
+	configPath := flag.String("config", os.Getenv("IRONROOT_CONFIG"), "IronRoot config file")
+	flag.Parse()
+
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
-	cfg, err := config.Load(os.Getenv("IRONROOT_CONFIG"))
+	cfg, err := config.Load(*configPath)
 	if err != nil {
 		slog.Error("load config", "error", err)
 		os.Exit(1)

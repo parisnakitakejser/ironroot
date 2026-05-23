@@ -1,0 +1,8 @@
+services:
+  caddy:
+    image: docker.io/library/caddy:2-alpine
+    ports:
+      - "8444:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro,Z
+      - ../../certs:/certs:ro,Z

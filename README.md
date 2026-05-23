@@ -41,15 +41,29 @@ Homelab servers and Kubernetes services
 
 ```bash
 make build
-IRONROOT_CONFIG=configs/server.yaml bin/ironroot-admin init-server
-IRONROOT_CONFIG=configs/server.yaml bin/ironroot-admin create-token --host node-01 --ttl 1h
-IRONROOT_CONFIG=configs/server.yaml bin/ironroot-server
+bin/ironroot-admin ca create-root \
+  --name "IronRoot Local Root CA" \
+  --password ironroot-local-root \
+  --out ./pki/root
+
+bin/ironroot-admin ca create-intermediate \
+  --root-cert ./pki/root/root-ca.crt \
+  --root-key ./pki/root/root-ca.key \
+  --root-password ironroot-local-root \
+  --password ironroot-local-intermediate \
+  --out ./pki/intermediate
+
+bin/ironroot-admin --config ./examples/config.local.yaml init-server
+bin/ironroot-server --config ./examples/config.local.yaml
 ```
 
 ```bash
+bin/ironroot-admin --config ./examples/config.local.yaml create-token --host local-demo --ttl 24h
 bin/ironroot-client enroll --server http://localhost:8443 --token <token>
-bin/ironroot-client request-cert --server http://localhost:8443 --enrollment-id <id> --dns node-01.local --out certs
+bin/ironroot-client request-cert --server http://localhost:8443 --enrollment-id <id> --dns demo.home.arpa --out certs
 ```
+
+For the browser-trusted website walkthrough, including `/etc/hosts`, nginx/Caddy/Python examples, and OS/browser trust-store installation, follow [docs/getting-started/local-quickstart.md](docs/getting-started/local-quickstart.md).
 
 ## First-time security bootstrap
 
@@ -90,6 +104,20 @@ Kubernetes manifests live in `deploy/kubernetes`. The Podman-compatible image bu
 make container-build
 kubectl apply -k deploy/kubernetes
 ```
+
+Podman local demo assets live under `examples/podman`, `examples/nginx`, `examples/caddy`, and `examples/python-https`.
+
+## Airgap Overview
+
+IronRoot separates offline trust creation from online issuance:
+
+- Generate and back up the Root CA on an offline machine.
+- Move only an Intermediate CSR to the offline machine.
+- Sign the Intermediate offline.
+- Move the signed Intermediate and public trust bundle to the online IronRoot server.
+- Mirror binaries, container images, Helm charts, and trust bundles through approved offline channels.
+
+See `docs/airgap/` for offline signing, trust distribution, and artifact mirroring guidance.
 
 ## Install with Helm
 

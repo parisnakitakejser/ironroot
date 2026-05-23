@@ -1,0 +1,27 @@
+server:
+  address: ":8443"
+  tls:
+    cert_file: "/tls/tls.crt"
+    key_file: "/tls/tls.key"
+database:
+  driver: sqlite
+  dsn: "file:/data/ironroot.db?_foreign_keys=on"
+pki:
+  root_file: "/pki/root-ca.crt"
+  chain_file: "/pki/ca-chain.crt"
+  intermediate_cert_file: "/pki/intermediate-ca.crt"
+  intermediate_key_file: "/pki/intermediate-ca.key"
+  intermediate_key_pass: "replace-with-intermediate-password"
+telemetry:
+  enabled: true
+  service_name: ironroot
+  deployment_environment: production
+  exporter:
+    protocol: grpc
+    endpoint: opentelemetry-collector.observability.svc:4317
+    insecure: true
+  prometheus:
+    enabled: true
+    path: /metrics
+log:
+  level: info

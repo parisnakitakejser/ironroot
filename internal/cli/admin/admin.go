@@ -2,16 +2,21 @@ package admin
 
 import (
 	"context"
+	"crypto/rand"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"log/slog"
 	"os"
+	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
 	"github.com/spf13/cobra"
 	"go.opentelemetry.io/otel"
 
+	"github.com/ironroot/ironroot/internal/ca"
 	"github.com/ironroot/ironroot/internal/config"
 	ironcrypto "github.com/ironroot/ironroot/internal/crypto"
 	"github.com/ironroot/ironroot/internal/db"
@@ -36,7 +41,7 @@ func (e ExitError) Unwrap() error { return e.Err }
 func (e ExitError) ExitCode() int { return e.Code }
 
 func New() *cobra.Command {
-	var server string
+	var server, configPath string
 	cmd := &cobra.Command{
 		Use:          "ironroot-admin",
 		Short:        "Admin CLI for IronRoot PKI",
@@ -47,7 +52,8 @@ func New() *cobra.Command {
 		},
 	}
 	cmd.PersistentFlags().StringVar(&server, "server", "http://localhost:8443", "IronRoot API URL")
-	cmd.AddCommand(initServer(), importIntermediate(), createToken(), bootstrap(), securityCheck(), apiCommand("list-tokens", &server, func(ctx context.Context, c *apiclient.Client) error {
+	cmd.PersistentFlags().StringVar(&configPath, "config", "", "IronRoot config file")
+	cmd.AddCommand(caCommands(), initServer(&configPath), importIntermediate(&configPath), createToken(&configPath), bootstrap(), securityCheck(), apiCommand("list-tokens", &server, func(ctx context.Context, c *apiclient.Client) error {
 		return json.NewEncoder(os.Stdout).Encode(map[string]string{"status": "list-tokens is local-store only in this MVP; use server DB tooling"})
 	}), apiCommand("list-certs", &server, func(ctx context.Context, c *apiclient.Client) error {
 		entries, err := c.Audit(ctx)
@@ -62,6 +68,125 @@ func New() *cobra.Command {
 	cmd.AddCommand(&cobra.Command{Use: "rotate-intermediate", Short: "Import a new active intermediate generation", RunE: func(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("rotate-intermediate design is documented; API mutation is intentionally deferred")
 	}})
+	return cmd
+}
+
+func caCommands() *cobra.Command {
+	cmd := &cobra.Command{Use: "ca", Short: "Create, inspect, and verify local IronRoot CA material"}
+	cmd.AddCommand(createRootCA(), createIntermediateCA(), inspectCA(), verifyChainCA())
+	return cmd
+}
+
+func createRootCA() *cobra.Command {
+	var name, out, password, passwordFile, lifetime string
+	cmd := &cobra.Command{Use: "create-root", Short: "Generate an encrypted offline Root CA key and certificate", RunE: func(cmd *cobra.Command, args []string) error {
+		pass, passPath, err := resolvePassword(password, passwordFile, filepath.Join(out, "root-ca.password"))
+		if err != nil {
+			return err
+		}
+		dur, err := parseDaysDuration(lifetime)
+		if err != nil {
+			return err
+		}
+		res, err := ca.CreateRoot(ca.CreateRootOptions{Name: name, OutDir: out, Password: pass, Lifetime: dur})
+		if err != nil {
+			return err
+		}
+		res.PasswordFile = passPath
+		fmt.Fprintf(cmd.OutOrStdout(), "Root CA created successfully.\n")
+		fmt.Fprintf(cmd.OutOrStdout(), "  certificate: %s\n  private key: %s\n  fingerprint: %s\n  expires: %s\n", res.CertPath, res.KeyPath, res.Fingerprint, res.NotAfter.Format(time.RFC3339))
+		if passPath != "" {
+			fmt.Fprintf(cmd.OutOrStdout(), "  password file: %s\n", passPath)
+		}
+		fmt.Fprintf(cmd.OutOrStdout(), "\nOffline-root guidance: keep %s off the IronRoot server, out of containers, and out of Kubernetes.\n", res.KeyPath)
+		passwordHint := "--root-password <root-password>"
+		if passPath != "" {
+			passwordHint = "--root-password-file " + passPath
+		}
+		fmt.Fprintf(cmd.OutOrStdout(), "Next step:\n  ironroot-admin ca create-intermediate --root-cert %s --root-key %s %s --out ./pki/intermediate\n", res.CertPath, res.KeyPath, passwordHint)
+		return nil
+	}}
+	cmd.Flags().StringVar(&name, "name", "IronRoot Local Root CA", "Root CA common name")
+	cmd.Flags().StringVar(&out, "out", "./pki/root", "output directory")
+	cmd.Flags().StringVar(&password, "password", "", "Root CA key password; omit to generate a local password file")
+	cmd.Flags().StringVar(&passwordFile, "password-file", "", "file containing Root CA key password")
+	cmd.Flags().StringVar(&lifetime, "lifetime", "20y", "Root CA lifetime, for example 20y or 175200h")
+	return cmd
+}
+
+func createIntermediateCA() *cobra.Command {
+	var name, out, rootCert, rootKey, rootPassword, rootPasswordFile, password, passwordFile, lifetime string
+	cmd := &cobra.Command{Use: "create-intermediate", Short: "Generate an encrypted Intermediate CA and sign it with the Root CA", RunE: func(cmd *cobra.Command, args []string) error {
+		rootPass, _, err := resolveExistingPassword(rootPassword, rootPasswordFile, filepath.Join(filepath.Dir(rootKey), "root-ca.password"))
+		if err != nil {
+			return err
+		}
+		pass, passPath, err := resolvePassword(password, passwordFile, filepath.Join(out, "intermediate-ca.password"))
+		if err != nil {
+			return err
+		}
+		dur, err := parseDaysDuration(lifetime)
+		if err != nil {
+			return err
+		}
+		res, err := ca.CreateIntermediate(ca.CreateIntermediateOptions{
+			Name: name, OutDir: out, RootCertPath: rootCert, RootKeyPath: rootKey, RootPassword: rootPass, Password: pass, Lifetime: dur,
+		})
+		if err != nil {
+			return err
+		}
+		res.PasswordFile = passPath
+		fmt.Fprintf(cmd.OutOrStdout(), "Intermediate CA created successfully.\n")
+		fmt.Fprintf(cmd.OutOrStdout(), "  certificate: %s\n  private key: %s\n  csr: %s\n  chain: %s\n  fingerprint: %s\n  expires: %s\n", res.CertPath, res.KeyPath, res.CSRPath, res.ChainPath, res.Fingerprint, res.NotAfter.Format(time.RFC3339))
+		if passPath != "" {
+			fmt.Fprintf(cmd.OutOrStdout(), "  password file: %s\n", passPath)
+		}
+		fmt.Fprintf(cmd.OutOrStdout(), "\nCopy the Intermediate CA certificate, encrypted key, chain, and password into the IronRoot server PKI path. Do not copy the Root CA private key.\n")
+		return nil
+	}}
+	cmd.Flags().StringVar(&name, "name", "IronRoot Local Intermediate CA", "Intermediate CA common name")
+	cmd.Flags().StringVar(&out, "out", "./pki/intermediate", "output directory")
+	cmd.Flags().StringVar(&rootCert, "root-cert", "./pki/root/root-ca.crt", "Root CA certificate")
+	cmd.Flags().StringVar(&rootKey, "root-key", "./pki/root/root-ca.key", "encrypted Root CA private key")
+	cmd.Flags().StringVar(&rootPassword, "root-password", "", "Root CA key password")
+	cmd.Flags().StringVar(&rootPasswordFile, "root-password-file", "", "file containing Root CA key password")
+	cmd.Flags().StringVar(&password, "password", "", "Intermediate CA key password; omit to generate a local password file")
+	cmd.Flags().StringVar(&passwordFile, "password-file", "", "file containing Intermediate CA key password")
+	cmd.Flags().StringVar(&lifetime, "lifetime", "5y", "Intermediate CA lifetime, for example 5y or 43800h")
+	return cmd
+}
+
+func inspectCA() *cobra.Command {
+	var format string
+	cmd := &cobra.Command{Use: "inspect <cert> [cert...]", Short: "Inspect CA and certificate PEM files", Args: cobra.MinimumNArgs(1), RunE: func(cmd *cobra.Command, args []string) error {
+		info, err := ca.InspectCertificates(args)
+		if err != nil {
+			return err
+		}
+		if format == "json" {
+			return json.NewEncoder(cmd.OutOrStdout()).Encode(info)
+		}
+		for _, cert := range info {
+			fmt.Fprintf(cmd.OutOrStdout(), "%s\n  subject: %s\n  issuer: %s\n  ca: %t\n  fingerprint: %s\n  expires: %s\n", cert.Path, cert.Subject, cert.Issuer, cert.IsCA, cert.Fingerprint, cert.NotAfter.Format(time.RFC3339))
+		}
+		return nil
+	}}
+	cmd.Flags().StringVar(&format, "output", "table", "output format: table or json")
+	return cmd
+}
+
+func verifyChainCA() *cobra.Command {
+	var root, intermediate, leaf string
+	cmd := &cobra.Command{Use: "verify-chain", Short: "Verify Root, Intermediate, and optional leaf certificate chain", RunE: func(cmd *cobra.Command, args []string) error {
+		if err := ca.VerifyChain(root, intermediate, leaf); err != nil {
+			return err
+		}
+		fmt.Fprintln(cmd.OutOrStdout(), "Certificate chain verified successfully.")
+		return nil
+	}}
+	cmd.Flags().StringVar(&root, "root-cert", "./pki/root/root-ca.crt", "Root CA certificate")
+	cmd.Flags().StringVar(&intermediate, "intermediate-cert", "./pki/intermediate/intermediate-ca.crt", "Intermediate CA certificate")
+	cmd.Flags().StringVar(&leaf, "cert", "", "optional leaf certificate to verify")
 	return cmd
 }
 
@@ -153,9 +278,9 @@ func securityCheck() *cobra.Command {
 	return cmd
 }
 
-func initServer() *cobra.Command {
+func initServer(configPath *string) *cobra.Command {
 	return &cobra.Command{Use: "init-server", Short: "Initialize server configuration and migrations", RunE: func(cmd *cobra.Command, args []string) error {
-		cfg, err := config.Load("")
+		cfg, err := config.Load(*configPath)
 		if err != nil {
 			return err
 		}
@@ -168,9 +293,9 @@ func initServer() *cobra.Command {
 	}}
 }
 
-func importIntermediate() *cobra.Command {
+func importIntermediate(configPath *string) *cobra.Command {
 	return &cobra.Command{Use: "import-intermediate", Short: "Validate mounted intermediate CA material", RunE: func(cmd *cobra.Command, args []string) error {
-		cfg, err := config.Load("")
+		cfg, err := config.Load(*configPath)
 		if err != nil {
 			return err
 		}
@@ -179,7 +304,7 @@ func importIntermediate() *cobra.Command {
 	}}
 }
 
-func createToken() *cobra.Command {
+func createToken(configPath *string) *cobra.Command {
 	var hostname, ttl string
 	cmd := &cobra.Command{Use: "create-token", Short: "Create a hashed bootstrap token in the configured SQLite database", RunE: func(cmd *cobra.Command, args []string) error {
 		if hostname == "" {
@@ -189,7 +314,7 @@ func createToken() *cobra.Command {
 		if err != nil {
 			return err
 		}
-		cfg, err := config.Load("")
+		cfg, err := config.Load(*configPath)
 		if err != nil {
 			return err
 		}
@@ -239,4 +364,67 @@ func apiCommand(use string, server *string, run func(context.Context, *apiclient
 		telemetry.RecordCommand(cmd.Context(), use, start, err)
 		return err
 	}}
+}
+
+func resolvePassword(value, file, defaultFile string) (string, string, error) {
+	if value != "" {
+		return value, "", nil
+	}
+	if file != "" {
+		pass, err := readPasswordFile(file)
+		return pass, file, err
+	}
+	pass, err := randomPassword()
+	if err != nil {
+		return "", "", err
+	}
+	if err := os.MkdirAll(filepath.Dir(defaultFile), 0o700); err != nil {
+		return "", "", err
+	}
+	if err := os.WriteFile(defaultFile, []byte(pass+"\n"), 0o600); err != nil {
+		return "", "", err
+	}
+	return pass, defaultFile, nil
+}
+
+func resolveExistingPassword(value, file, defaultFile string) (string, string, error) {
+	if value != "" {
+		return value, "", nil
+	}
+	if file == "" {
+		file = defaultFile
+	}
+	pass, err := readPasswordFile(file)
+	return pass, file, err
+}
+
+func readPasswordFile(path string) (string, error) {
+	body, err := os.ReadFile(path)
+	if err != nil {
+		return "", err
+	}
+	pass := strings.TrimSpace(string(body))
+	if pass == "" {
+		return "", fmt.Errorf("password file %s is empty", path)
+	}
+	return pass, nil
+}
+
+func randomPassword() (string, error) {
+	b := make([]byte, 32)
+	if _, err := rand.Read(b); err != nil {
+		return "", err
+	}
+	return base64.RawURLEncoding.EncodeToString(b), nil
+}
+
+func parseDaysDuration(value string) (time.Duration, error) {
+	if strings.HasSuffix(value, "y") {
+		years, err := time.ParseDuration(strings.TrimSuffix(value, "y") + "h")
+		if err != nil {
+			return 0, err
+		}
+		return years * 365 * 24, nil
+	}
+	return time.ParseDuration(value)
 }

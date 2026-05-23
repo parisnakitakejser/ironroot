@@ -1,0 +1,23 @@
+server:
+  address: ":8443"
+database:
+  driver: sqlite
+  dsn: "file:/data/ironroot.db?_foreign_keys=on"
+pki:
+  root_file: "/pki/root-ca.crt"
+  chain_file: "/pki/ca-chain.crt"
+  intermediate_cert_file: "/pki/intermediate-ca.crt"
+  intermediate_key_file: "/pki/intermediate-ca.key"
+  intermediate_key_pass: "replace-with-intermediate-password"
+  default_lifetime: 2160h
+  renew_before: 720h
+telemetry:
+  enabled: true
+  service_name: ironroot
+  deployment_environment: podman
+  exporter:
+    protocol: grpc
+    endpoint: host.containers.internal:4317
+    insecure: true
+log:
+  level: info

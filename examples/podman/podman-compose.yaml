@@ -1,0 +1,12 @@
+services:
+  ironroot:
+    image: ironroot:dev
+    ports:
+      - "8443:8443"
+    environment:
+      IRONROOT_CONFIG: /config/config.yaml
+      OTEL_SERVICE_NAME: ironroot-local
+    volumes:
+      - ../../examples/config.podman.yaml:/config/config.yaml:ro,Z
+      - ../../data:/data:Z
+      - ../../pki/intermediate:/pki:ro,Z

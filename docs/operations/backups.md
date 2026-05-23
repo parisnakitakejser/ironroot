@@ -1,0 +1,3 @@
+# Backups
+
+Back up the SQLite database, Intermediate CA certificate, encrypted Intermediate CA private key, Intermediate key password, config, and audit logs. Root CA backups should remain offline and encrypted.

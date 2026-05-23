@@ -1,0 +1,4 @@
+demo.home.arpa:443, demo.local:443, test.ironroot.local:443 {
+  tls /certs/tls.crt /certs/tls.key
+  respond "IronRoot TLS demo from Caddy"
+}
