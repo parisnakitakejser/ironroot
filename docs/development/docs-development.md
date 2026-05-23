@@ -45,7 +45,13 @@ GitHub Pages should be configured to serve from:
 - Branch: `website`
 - Folder: `/`
 
+Do not configure Pages to serve from `main` or `/docs`. The `docs/` directory contains MkDocs source files, not a Jekyll site. If GitHub Pages points at `/docs`, GitHub will run its Jekyll builder and fail on MkDocs Material assets.
+
 The source documentation stays on `main` under `docs/`. The workflow builds the site from `main`, validates it with `mkdocs build --strict`, and publishes only generated static files to the `website` branch.
+
+The `website` branch is an output branch only. Repository workflows are scoped to `main`, pull requests targeting `main`, or release tags, and the website publish commit includes `[skip ci]` as an additional guard. Do not open pull requests from `website` or edit it manually.
+
+The publish workflow writes `.nojekyll` into the generated site before pushing it to `website`, so GitHub Pages serves the static MkDocs output directly.
 
 ```mermaid
 flowchart LR
