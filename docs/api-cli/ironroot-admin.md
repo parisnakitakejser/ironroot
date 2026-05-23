@@ -97,5 +97,28 @@ ironroot-admin ca inspect --output json ./pki/root/root-ca.crt
 ironroot-admin ca create-intermediate --root-cert ./pki/root/root-ca.crt --root-key ./pki/root/root-ca.key --out ./pki/intermediate
 ironroot-admin bootstrap --config ./examples/config.local.yaml
 ironroot-admin --config ./examples/config.local.yaml create-token --host local-demo --ttl 24h
+ironroot-admin --config ./examples/config.local.yaml list-tokens
+ironroot-admin --config ./examples/config.local.yaml inspect-token <token-id>
+ironroot-admin --config ./examples/config.local.yaml revoke-token <token-id>
 ironroot-admin security-check --config ./examples/config.local.yaml
 ```
+
+## Bootstrap Token Operations
+
+`create-token` prints the token secret once and stores only a hash in the database. `list-tokens` and `inspect-token` never print token secrets.
+
+```bash
+ironroot-admin --config ./examples/config.local.yaml list-tokens --active
+ironroot-admin --config ./examples/config.local.yaml list-tokens --host demo.local --wide
+ironroot-admin --config ./examples/config.local.yaml list-tokens --json
+ironroot-admin --config ./examples/config.local.yaml list-tokens --markdown
+```
+
+Token statuses are:
+
+| Status | Meaning |
+|---|---|
+| `active` | Token is unexpired, not revoked, and unused. |
+| `used` | Token has created at least one enrollment. |
+| `expired` | Token is past `expires_at`. |
+| `revoked` | Token was explicitly revoked. |

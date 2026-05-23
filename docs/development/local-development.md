@@ -288,6 +288,16 @@ ironroot-client request-cert \
   --out .localdev/certs/demo.local
 ```
 
+The output directory is created automatically. Existing files are protected; use `--overwrite` only when you intentionally want to replace `tls.key`, `tls.crt`, `fullchain.crt`, metadata, and fingerprints.
+
+Inspect generated files:
+
+```bash
+find .localdev/certs/demo.local -maxdepth 1 -type f -print
+cat .localdev/certs/demo.local/README.txt
+cat .localdev/certs/demo.local/metadata.json
+```
+
 ## Debugging IronRoot Locally
 
 Run with debug logs:

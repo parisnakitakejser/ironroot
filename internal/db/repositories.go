@@ -58,10 +58,55 @@ func (s *SQLStore) ListBootstrapTokens(ctx context.Context) ([]BootstrapToken, e
 	return out, err
 }
 
+func (s *SQLStore) GetBootstrapToken(ctx context.Context, id string) (BootstrapToken, error) {
+	ctx, span := telemetry.StartSpan(ctx, "db.get_bootstrap_token_by_id")
+	started := time.Now()
+	var t BootstrapToken
+	err := s.db.QueryRowContext(ctx, `SELECT id, token_hash, hostname, expires_at, revoked_at, created_at FROM bootstrap_tokens WHERE id = ?`, id).
+		Scan(&t.ID, &t.TokenHash, &t.Hostname, &t.ExpiresAt, &t.RevokedAt, &t.CreatedAt)
+	if err == sql.ErrNoRows {
+		telemetry.RecordDatabase(ctx, "get_bootstrap_token_by_id", started, ErrNotFound)
+		telemetry.EndSpan(span, ErrNotFound)
+		return t, ErrNotFound
+	}
+	telemetry.RecordDatabase(ctx, "get_bootstrap_token_by_id", started, err)
+	telemetry.EndSpan(span, err)
+	return t, err
+}
+
+func (s *SQLStore) BootstrapTokenUsage(ctx context.Context, tokenID string) (TokenUsage, error) {
+	ctx, span := telemetry.StartSpan(ctx, "db.bootstrap_token_usage")
+	started := time.Now()
+	var usage TokenUsage
+	var lastUsed sql.NullTime
+	err := s.db.QueryRowContext(ctx, `SELECT COUNT(*), MAX(created_at) FROM enrollments WHERE token_id = ?`, tokenID).
+		Scan(&usage.UsageCount, &lastUsed)
+	if err != nil {
+		telemetry.RecordDatabase(ctx, "bootstrap_token_usage", started, err)
+		telemetry.EndSpan(span, err)
+		return usage, err
+	}
+	if lastUsed.Valid {
+		usage.LastUsedAt = &lastUsed.Time
+	}
+	if usage.UsageCount > 0 {
+		_ = s.db.QueryRowContext(ctx, `SELECT id, hostname FROM enrollments WHERE token_id = ? ORDER BY created_at DESC LIMIT 1`, tokenID).
+			Scan(&usage.EnrollmentID, &usage.EnrollmentHost)
+	}
+	telemetry.RecordDatabase(ctx, "bootstrap_token_usage", started, nil)
+	telemetry.EndSpan(span, nil)
+	return usage, nil
+}
+
 func (s *SQLStore) RevokeBootstrapToken(ctx context.Context, id string) error {
 	ctx, span := telemetry.StartSpan(ctx, "db.revoke_bootstrap_token")
 	started := time.Now()
-	_, err := s.db.ExecContext(ctx, `UPDATE bootstrap_tokens SET revoked_at = CURRENT_TIMESTAMP WHERE id = ?`, id)
+	res, err := s.db.ExecContext(ctx, `UPDATE bootstrap_tokens SET revoked_at = CURRENT_TIMESTAMP WHERE id = ?`, id)
+	if err == nil {
+		if rows, rowsErr := res.RowsAffected(); rowsErr == nil && rows == 0 {
+			err = ErrNotFound
+		}
+	}
 	telemetry.RecordDatabase(ctx, "revoke_bootstrap_token", started, err)
 	telemetry.EndSpan(span, err)
 	return err

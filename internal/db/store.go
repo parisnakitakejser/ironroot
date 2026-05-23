@@ -20,6 +20,8 @@ type Store interface {
 	CreateBootstrapToken(context.Context, BootstrapToken) error
 	GetBootstrapTokenByHash(context.Context, string) (BootstrapToken, error)
 	ListBootstrapTokens(context.Context) ([]BootstrapToken, error)
+	GetBootstrapToken(context.Context, string) (BootstrapToken, error)
+	BootstrapTokenUsage(context.Context, string) (TokenUsage, error)
 	RevokeBootstrapToken(context.Context, string) error
 	CreateEnrollment(context.Context, Enrollment) error
 	GetEnrollment(context.Context, string) (Enrollment, error)
@@ -59,6 +61,13 @@ type BootstrapToken struct {
 	ExpiresAt time.Time
 	RevokedAt *time.Time
 	CreatedAt time.Time
+}
+
+type TokenUsage struct {
+	UsageCount     int
+	LastUsedAt     *time.Time
+	EnrollmentID   string
+	EnrollmentHost string
 }
 
 type Enrollment struct {

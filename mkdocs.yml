@@ -64,6 +64,7 @@ nav:
   - Installation:
       - Binary: installation/binary.md
       - Podman: podman/index.md
+      - Podman TLS Usage: podman/tls-usage.md
       - Helm Installation: installation/helm.md
       - Configuration: installation/configuration.md
       - Upgrades: installation/upgrades.md
@@ -103,6 +104,7 @@ nav:
       - Overview: kubernetes/index.md
       - Helm Installation: kubernetes/helm-installation.md
       - Values Reference: kubernetes/values-reference.md
+      - TLS Usage: kubernetes/tls-usage.md
       - Security: kubernetes/security.md
       - Observability: kubernetes/observability.md
   - Airgap:
@@ -132,7 +134,7 @@ nav:
   - API & CLI:
       - REST API: api/index.md
       - ironroot-admin: api-cli/ironroot-admin.md
-      - ironroot-client: cli/client.md
+      - ironroot-client: api-cli/ironroot-client.md
       - Configuration Reference: cli/configuration-reference.md
       - Environment Variables: cli/environment-variables.md
       - Examples: cli/examples.md

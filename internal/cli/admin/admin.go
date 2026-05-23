@@ -6,10 +6,12 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"io"
 	"log/slog"
 	"os"
 	"path/filepath"
 	"strings"
+	"text/tabwriter"
 	"time"
 
 	"github.com/google/uuid"
@@ -53,18 +55,13 @@ func New() *cobra.Command {
 	}
 	cmd.PersistentFlags().StringVar(&server, "server", "http://localhost:8443", "IronRoot API URL")
 	cmd.PersistentFlags().StringVar(&configPath, "config", "", "IronRoot config file")
-	cmd.AddCommand(caCommands(), initServer(&configPath), importIntermediate(&configPath), createToken(&configPath), bootstrap(), securityCheck(), apiCommand("list-tokens", &server, func(ctx context.Context, c *apiclient.Client) error {
-		return json.NewEncoder(os.Stdout).Encode(map[string]string{"status": "list-tokens is local-store only in this MVP; use server DB tooling"})
-	}), apiCommand("list-certs", &server, func(ctx context.Context, c *apiclient.Client) error {
+	cmd.AddCommand(caCommands(), initServer(&configPath), importIntermediate(&configPath), createToken(&configPath), listTokens(&configPath), revokeToken(&configPath), inspectToken(&configPath), bootstrap(), securityCheck(), apiCommand("list-certs", &server, func(ctx context.Context, c *apiclient.Client) error {
 		entries, err := c.Audit(ctx)
 		if err != nil {
 			return err
 		}
 		return json.NewEncoder(os.Stdout).Encode(entries)
 	}), revokeCert(&server), migrationStatus(&server))
-	cmd.AddCommand(&cobra.Command{Use: "revoke-token", Short: "Revoke a bootstrap token by id", RunE: func(cmd *cobra.Command, args []string) error {
-		return fmt.Errorf("revoke-token requires direct store access and is reserved for the server-side admin plane")
-	}})
 	cmd.AddCommand(&cobra.Command{Use: "rotate-intermediate", Short: "Import a new active intermediate generation", RunE: func(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("rotate-intermediate design is documented; API mutation is intentionally deferred")
 	}})
@@ -448,15 +445,271 @@ func createToken(configPath *string) *cobra.Command {
 		if err != nil {
 			return err
 		}
-		err = store.CreateBootstrapToken(cmd.Context(), db.BootstrapToken{ID: uuid.NewString(), TokenHash: ironcrypto.HashToken(token), Hostname: hostname, ExpiresAt: time.Now().UTC().Add(dur), CreatedAt: time.Now().UTC()})
+		now := time.Now().UTC()
+		id := uuid.NewString()
+		expires := now.Add(dur)
+		err = store.CreateBootstrapToken(cmd.Context(), db.BootstrapToken{ID: id, TokenHash: ironcrypto.HashToken(token), Hostname: hostname, ExpiresAt: expires, CreatedAt: now})
 		if err != nil {
 			return err
 		}
-		return json.NewEncoder(os.Stdout).Encode(map[string]string{"token": token, "hostname": hostname, "ttl": ttl})
+		fmt.Fprintln(cmd.OutOrStdout(), "Bootstrap token created successfully.")
+		fmt.Fprintf(cmd.OutOrStdout(), "\nID:\n%s\n\nHost:\n%s\n\nExpires:\n%s\n\n", id, hostname, expires.Format(time.RFC3339))
+		if dur > 24*time.Hour {
+			fmt.Fprintln(cmd.ErrOrStderr(), "WARNING: bootstrap token TTL is longer than 24h. Short-lived tokens are safer.")
+		}
+		fmt.Fprintf(cmd.OutOrStdout(), "Token:\n%s\n\n", token)
+		fmt.Fprintln(cmd.OutOrStdout(), "Next step:")
+		fmt.Fprintf(cmd.OutOrStdout(), "ironroot-client enroll \\\n  --server http://localhost:8443 \\\n  --hostname %s \\\n  --token %s\n", hostname, token)
+		return nil
 	}}
 	cmd.Flags().StringVar(&hostname, "host", "", "hostname allowed to enroll")
 	cmd.Flags().StringVar(&ttl, "ttl", "1h", "token lifetime")
 	return cmd
+}
+
+type tokenRow struct {
+	ID             string     `json:"id"`
+	Hostname       string     `json:"hostname"`
+	Status         string     `json:"status"`
+	CreatedAt      time.Time  `json:"created_at"`
+	ExpiresAt      time.Time  `json:"expires_at"`
+	RevokedAt      *time.Time `json:"revoked_at,omitempty"`
+	Used           bool       `json:"used"`
+	UsageCount     int        `json:"usage_count"`
+	LastUsedAt     *time.Time `json:"last_used_at,omitempty"`
+	EnrollmentID   string     `json:"enrollment_id,omitempty"`
+	EnrollmentHost string     `json:"enrollment_host,omitempty"`
+}
+
+func listTokens(configPath *string) *cobra.Command {
+	var active, expired, revoked, used, unused, wide bool
+	var host string
+	var jsonOut, markdown bool
+	cmd := &cobra.Command{Use: "list-tokens", Short: "List bootstrap tokens from the configured store", RunE: func(cmd *cobra.Command, args []string) error {
+		store, closeFn, err := openAdminStore(cmd.Context(), *configPath)
+		if err != nil {
+			return err
+		}
+		defer closeFn()
+		rows, err := loadTokenRows(cmd.Context(), store)
+		if err != nil {
+			return err
+		}
+		rows = filterTokenRows(rows, tokenFilters{active: active, expired: expired, revoked: revoked, used: used, unused: unused, host: host})
+		switch {
+		case jsonOut:
+			return json.NewEncoder(cmd.OutOrStdout()).Encode(rows)
+		case markdown:
+			renderTokenMarkdown(cmd.OutOrStdout(), rows, wide)
+		default:
+			renderTokenTable(cmd.OutOrStdout(), rows, wide)
+		}
+		return nil
+	}}
+	cmd.Flags().BoolVar(&active, "active", false, "show active tokens")
+	cmd.Flags().BoolVar(&expired, "expired", false, "show expired tokens")
+	cmd.Flags().BoolVar(&revoked, "revoked", false, "show revoked tokens")
+	cmd.Flags().BoolVar(&used, "used", false, "show used tokens")
+	cmd.Flags().BoolVar(&unused, "unused", false, "show unused tokens")
+	cmd.Flags().StringVar(&host, "host", "", "filter by hostname")
+	cmd.Flags().BoolVar(&jsonOut, "json", false, "render JSON output")
+	cmd.Flags().BoolVar(&markdown, "markdown", false, "render Markdown output")
+	cmd.Flags().BoolVar(&wide, "wide", false, "include enrollment relationship columns")
+	return cmd
+}
+
+func inspectToken(configPath *string) *cobra.Command {
+	var jsonOut, markdown bool
+	cmd := &cobra.Command{Use: "inspect-token <token-id>", Short: "Inspect one bootstrap token without revealing the token secret", Args: cobra.ExactArgs(1), RunE: func(cmd *cobra.Command, args []string) error {
+		store, closeFn, err := openAdminStore(cmd.Context(), *configPath)
+		if err != nil {
+			return err
+		}
+		defer closeFn()
+		row, err := loadTokenRow(cmd.Context(), store, args[0])
+		if err != nil {
+			return err
+		}
+		switch {
+		case jsonOut:
+			return json.NewEncoder(cmd.OutOrStdout()).Encode(row)
+		case markdown:
+			renderTokenMarkdown(cmd.OutOrStdout(), []tokenRow{row}, true)
+		default:
+			renderTokenTable(cmd.OutOrStdout(), []tokenRow{row}, true)
+		}
+		if row.Status == "expired" && !row.Used {
+			fmt.Fprintln(cmd.ErrOrStderr(), "WARNING: token expired unused. Consider revoking or cleaning it up.")
+		}
+		return nil
+	}}
+	cmd.Flags().BoolVar(&jsonOut, "json", false, "render JSON output")
+	cmd.Flags().BoolVar(&markdown, "markdown", false, "render Markdown output")
+	return cmd
+}
+
+func revokeToken(configPath *string) *cobra.Command {
+	cmd := &cobra.Command{Use: "revoke-token <token-id>", Short: "Revoke a bootstrap token by id", Args: cobra.ExactArgs(1), RunE: func(cmd *cobra.Command, args []string) error {
+		store, closeFn, err := openAdminStore(cmd.Context(), *configPath)
+		if err != nil {
+			return err
+		}
+		defer closeFn()
+		if err := store.RevokeBootstrapToken(cmd.Context(), args[0]); err != nil {
+			return err
+		}
+		fmt.Fprintf(cmd.OutOrStdout(), "Bootstrap token revoked: %s\n", args[0])
+		return nil
+	}}
+	return cmd
+}
+
+func openAdminStore(ctx context.Context, configPath string) (*db.SQLStore, func(), error) {
+	cfg, err := config.Load(configPath)
+	if err != nil {
+		return nil, nil, err
+	}
+	store, err := db.Open(ctx, cfg.Database)
+	if err != nil {
+		return nil, nil, err
+	}
+	if err := store.Migrate(ctx); err != nil {
+		_ = store.Close()
+		return nil, nil, err
+	}
+	return store, func() { _ = store.Close() }, nil
+}
+
+func loadTokenRows(ctx context.Context, store *db.SQLStore) ([]tokenRow, error) {
+	tokens, err := store.ListBootstrapTokens(ctx)
+	if err != nil {
+		return nil, err
+	}
+	rows := make([]tokenRow, 0, len(tokens))
+	for _, token := range tokens {
+		row, err := tokenRowFrom(ctx, store, token)
+		if err != nil {
+			return nil, err
+		}
+		rows = append(rows, row)
+	}
+	return rows, nil
+}
+
+func loadTokenRow(ctx context.Context, store *db.SQLStore, id string) (tokenRow, error) {
+	token, err := store.GetBootstrapToken(ctx, id)
+	if err != nil {
+		return tokenRow{}, err
+	}
+	return tokenRowFrom(ctx, store, token)
+}
+
+func tokenRowFrom(ctx context.Context, store *db.SQLStore, token db.BootstrapToken) (tokenRow, error) {
+	usage, err := store.BootstrapTokenUsage(ctx, token.ID)
+	if err != nil {
+		return tokenRow{}, err
+	}
+	row := tokenRow{
+		ID: token.ID, Hostname: token.Hostname, CreatedAt: token.CreatedAt, ExpiresAt: token.ExpiresAt,
+		RevokedAt: token.RevokedAt, Used: usage.UsageCount > 0, UsageCount: usage.UsageCount,
+		LastUsedAt: usage.LastUsedAt, EnrollmentID: usage.EnrollmentID, EnrollmentHost: usage.EnrollmentHost,
+	}
+	row.Status = tokenStatus(row, time.Now().UTC())
+	return row, nil
+}
+
+func tokenStatus(row tokenRow, now time.Time) string {
+	if row.RevokedAt != nil {
+		return "revoked"
+	}
+	if now.After(row.ExpiresAt) {
+		return "expired"
+	}
+	if row.Used {
+		return "used"
+	}
+	return "active"
+}
+
+type tokenFilters struct {
+	active, expired, revoked, used, unused bool
+	host                                   string
+}
+
+func filterTokenRows(rows []tokenRow, f tokenFilters) []tokenRow {
+	var out []tokenRow
+	for _, row := range rows {
+		if f.host != "" && !strings.EqualFold(row.Hostname, f.host) {
+			continue
+		}
+		if f.active && row.Status != "active" {
+			continue
+		}
+		if f.expired && row.Status != "expired" {
+			continue
+		}
+		if f.revoked && row.Status != "revoked" {
+			continue
+		}
+		if f.used && !row.Used {
+			continue
+		}
+		if f.unused && row.Used {
+			continue
+		}
+		out = append(out, row)
+	}
+	return out
+}
+
+func renderTokenTable(out io.Writer, rows []tokenRow, wide bool) {
+	w := tabwriter.NewWriter(out, 0, 0, 2, ' ', 0)
+	if wide {
+		fmt.Fprintln(w, "ID\tHOST\tSTATUS\tCREATED\tEXPIRES\tUSED\tUSAGE\tLAST USED\tENROLLMENT")
+	} else {
+		fmt.Fprintln(w, "ID\tHOST\tSTATUS\tCREATED\tEXPIRES\tUSED\tLAST USED")
+	}
+	for _, row := range rows {
+		lastUsed := "never"
+		if row.LastUsedAt != nil {
+			lastUsed = row.LastUsedAt.Format(time.RFC3339)
+		}
+		used := "no"
+		if row.Used {
+			used = "yes"
+		}
+		if wide {
+			fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\t%s\t%d\t%s\t%s\n", row.ID, row.Hostname, row.Status, row.CreatedAt.Format(time.RFC3339), row.ExpiresAt.Format(time.RFC3339), used, row.UsageCount, lastUsed, row.EnrollmentID)
+		} else {
+			fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\t%s\t%s\n", row.ID, row.Hostname, row.Status, row.CreatedAt.Format(time.RFC3339), row.ExpiresAt.Format(time.RFC3339), used, lastUsed)
+		}
+	}
+	_ = w.Flush()
+}
+
+func renderTokenMarkdown(out io.Writer, rows []tokenRow, wide bool) {
+	if wide {
+		fmt.Fprintln(out, "| ID | Host | Status | Created | Expires | Used | Usage | Last used | Enrollment |")
+		fmt.Fprintln(out, "|---|---|---|---|---|---|---:|---|---|")
+	} else {
+		fmt.Fprintln(out, "| ID | Host | Status | Created | Expires | Used | Last used |")
+		fmt.Fprintln(out, "|---|---|---|---|---|---|---|")
+	}
+	for _, row := range rows {
+		lastUsed := "never"
+		if row.LastUsedAt != nil {
+			lastUsed = row.LastUsedAt.Format(time.RFC3339)
+		}
+		used := "no"
+		if row.Used {
+			used = "yes"
+		}
+		if wide {
+			fmt.Fprintf(out, "| `%s` | `%s` | `%s` | `%s` | `%s` | `%s` | `%d` | `%s` | `%s` |\n", row.ID, row.Hostname, row.Status, row.CreatedAt.Format(time.RFC3339), row.ExpiresAt.Format(time.RFC3339), used, row.UsageCount, lastUsed, row.EnrollmentID)
+		} else {
+			fmt.Fprintf(out, "| `%s` | `%s` | `%s` | `%s` | `%s` | `%s` | `%s` |\n", row.ID, row.Hostname, row.Status, row.CreatedAt.Format(time.RFC3339), row.ExpiresAt.Format(time.RFC3339), used, lastUsed)
+		}
+	}
 }
 
 func revokeCert(server *string) *cobra.Command {

@@ -153,7 +153,10 @@ This writes:
 - `certs/tls.key`
 - `certs/tls.crt`
 - `certs/ca-chain.crt`
-- `certs/root-ca.crt`
+- `certs/fullchain.crt`
+- `certs/metadata.json`
+- `certs/fingerprints.txt`
+- `certs/README.txt`
 
 Verify the full chain:
 

@@ -4,6 +4,8 @@
 
 Trust distribution installs the Root CA certificate into systems that need to validate IronRoot-issued certificates. It does not install private keys.
 
+For service configuration, `ironroot-client request-cert` writes both `tls.crt` and `fullchain.crt`. Browsers trust the service only when the Root CA is installed in the OS or browser trust store and the service presents a chain from the leaf certificate to the Intermediate CA.
+
 Linux:
 
 ```bash
