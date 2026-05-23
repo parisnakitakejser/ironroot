@@ -7,6 +7,8 @@
 
 > Airgap-first trust infrastructure
 
+![./logos/logo-social.png]()
+
 <!-- Logo placeholder: docs/assets/logo-placeholder.png -->
 
 IronRoot is a modern internal PKI platform for air-gapped environments, offline-root security, observable certificate operations, Kubernetes-native deployments, and self-hosted infrastructure.
