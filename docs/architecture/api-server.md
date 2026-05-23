@@ -1,6 +1,9 @@
 # IronRoot API Server
 
-<span class="ironroot-page-status ironroot-page-status--in-progress">Status: In progress</span>
+<div class="ironroot-doc-meta" markdown>
+<span class="ironroot-badge ironroot-badge--stage">Stage: Alpha</span>
+<span class="ironroot-badge ironroot-badge--status">Status: Draft</span>
+</div>
 
 The API server is the online control plane for enrollment, certificate issuance, renewal, revocation metadata, audit logging, and OpenTelemetry instrumentation.
 
@@ -50,4 +53,3 @@ flowchart LR
 ```
 
 Audit logging is not optional behavior in the current server write path. Retention controls are future work, so operators should back up and rotate database storage according to local policy.
-

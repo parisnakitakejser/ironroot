@@ -1,6 +1,9 @@
 # Trust Model
 
-<span class="ironroot-page-status ironroot-page-status--in-progress">Status: In progress</span>
+<div class="ironroot-doc-meta" markdown>
+<span class="ironroot-badge ironroot-badge--stage">Stage: Alpha</span>
+<span class="ironroot-badge ironroot-badge--status">Status: Draft</span>
+</div>
 
 IronRoot trust starts at the offline Root CA. The Root CA signs Intermediate CAs only. The online IronRoot server holds the encrypted Intermediate CA key and uses it to sign workload certificates from validated CSRs.
 

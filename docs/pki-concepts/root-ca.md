@@ -1,6 +1,9 @@
 # Root CA
 
-<span class="ironroot-page-status ironroot-page-status--in-progress">Status: In progress</span>
+<div class="ironroot-doc-meta" markdown>
+<span class="ironroot-badge ironroot-badge--stage">Stage: Alpha</span>
+<span class="ironroot-badge ironroot-badge--status">Status: Draft</span>
+</div>
 
 The Root CA is the trust anchor for an IronRoot deployment. Systems trust IronRoot-issued certificates because they trust the Root CA certificate and can validate a chain through the Intermediate CA.
 

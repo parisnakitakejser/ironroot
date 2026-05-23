@@ -1,6 +1,9 @@
 # Airgap-First Architecture
 
-<span class="ironroot-page-status ironroot-page-status--in-progress">Status: In progress</span>
+<div class="ironroot-doc-meta" markdown>
+<span class="ironroot-badge ironroot-badge--stage">Stage: Alpha</span>
+<span class="ironroot-badge ironroot-badge--status">Status: Draft</span>
+</div>
 
 Airgap-first means IronRoot can be installed, operated, observed, and recovered without assuming live Internet access from the target environment.
 
@@ -45,4 +48,3 @@ flowchart TD
 ```
 
 Distribute public trust bundles through controlled configuration management. Rotate trust bundles before issuing from a new Root during migration.
-

@@ -1,6 +1,9 @@
 # Admin CLI
 
-<span class="ironroot-page-status ironroot-page-status--in-progress">Status: In progress</span>
+<div class="ironroot-doc-meta" markdown>
+<span class="ironroot-badge ironroot-badge--stage">Stage: Alpha</span>
+<span class="ironroot-badge ironroot-badge--status">Status: Draft</span>
+</div>
 
 `ironroot-admin` is for trusted operators. It handles first-run bootstrap, security checks, local CA generation, bootstrap token creation, revocation actions, and migration status.
 

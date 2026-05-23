@@ -1,6 +1,9 @@
 # Root CA Best Practices
 
-<span class="ironroot-page-status ironroot-page-status--in-progress">Status: In progress</span>
+<div class="ironroot-doc-meta" markdown>
+<span class="ironroot-badge ironroot-badge--stage">Stage: Alpha</span>
+<span class="ironroot-badge ironroot-badge--status">Status: Draft</span>
+</div>
 
 Treat the Root CA as offline security infrastructure, not as an application runtime dependency.
 

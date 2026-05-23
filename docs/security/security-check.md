@@ -1,6 +1,9 @@
 # Security Check
 
-<span class="ironroot-page-status ironroot-page-status--in-progress">Status: In progress</span>
+<div class="ironroot-doc-meta" markdown>
+<span class="ironroot-badge ironroot-badge--stage">Stage: Alpha</span>
+<span class="ironroot-badge ironroot-badge--status">Status: Draft</span>
+</div>
 
 `ironroot-admin security-check` inspects the host, IronRoot config, CA material, database posture, API TLS settings, bootstrap token posture, audit logging, telemetry, and runtime environment.
 
@@ -37,4 +40,3 @@ ironroot-admin security-check \
 ```
 
 Do not put production private keys, token values, or secret material into CI.
-

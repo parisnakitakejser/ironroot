@@ -1,6 +1,9 @@
 # Online Intermediate CA
 
-<span class="ironroot-page-status ironroot-page-status--in-progress">Status: In progress</span>
+<div class="ironroot-doc-meta" markdown>
+<span class="ironroot-badge ironroot-badge--stage">Stage: Alpha</span>
+<span class="ironroot-badge ironroot-badge--status">Status: Draft</span>
+</div>
 
 The Intermediate CA is the operational issuing CA. It lives with the IronRoot server because certificate automation needs an online signer, but it is deliberately separated from the Root CA.
 
@@ -64,4 +67,3 @@ sequenceDiagram
 - Use Kubernetes Secrets with narrowly scoped access in Kubernetes.
 - Back up the Intermediate key, certificate, chain, and database together.
 - Never bake the Intermediate private key into a container image.
-

@@ -1,6 +1,9 @@
 # Root Migration
 
-<span class="ironroot-page-status ironroot-page-status--in-progress">Status: In progress</span>
+<div class="ironroot-doc-meta" markdown>
+<span class="ironroot-badge ironroot-badge--stage">Stage: Alpha</span>
+<span class="ironroot-badge ironroot-badge--status">Status: Draft</span>
+</div>
 
 IronRoot is designed for staged Root CA migration:
 
@@ -16,4 +19,3 @@ timeline
 ```
 
 The database stores multiple CA generations with active, disabled, and retired states.
-

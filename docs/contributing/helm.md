@@ -1,5 +1,8 @@
 # Helm Development
 
-<span class="ironroot-page-status ironroot-page-status--in-progress">Status: In progress</span>
+<div class="ironroot-doc-meta" markdown>
+<span class="ironroot-badge ironroot-badge--stage">Stage: Alpha</span>
+<span class="ironroot-badge ironroot-badge--status">Status: Draft</span>
+</div>
 
 Use `make helm-lint`, `make helm-template`, `make helm-package`, and `make helm-test` when changing the chart. Keep security defaults enabled and avoid embedding real secrets in values.

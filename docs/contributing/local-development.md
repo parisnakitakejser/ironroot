@@ -1,6 +1,9 @@
 # Local Development
 
-<span class="ironroot-page-status ironroot-page-status--in-progress">Status: In progress</span>
+<div class="ironroot-doc-meta" markdown>
+<span class="ironroot-badge ironroot-badge--stage">Stage: Alpha</span>
+<span class="ironroot-badge ironroot-badge--status ironroot-badge--in-progress">Status: In Progress</span>
+</div>
 
 This guide is the contributor path for building, installing, running, debugging, patching, and verifying IronRoot from a Git checkout.
 

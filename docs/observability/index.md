@@ -1,6 +1,9 @@
 # Observability Overview
 
-<span class="ironroot-page-status ironroot-page-status--in-progress">Status: In progress</span>
+<div class="ironroot-doc-meta" markdown>
+<span class="ironroot-badge ironroot-badge--stage">Stage: Alpha</span>
+<span class="ironroot-badge ironroot-badge--status">Status: Draft</span>
+</div>
 
 IronRoot treats observability as part of the PKI control plane. Certificate enrollment, issuance, renewal, revocation, audit writes, database operations, bootstrap, and security checks emit telemetry so operators can understand trust operations without exposing secrets.
 

@@ -1,6 +1,9 @@
 # ironroot-client
 
-<span class="ironroot-page-status ironroot-page-status--in-progress">Status: In progress</span>
+<div class="ironroot-doc-meta" markdown>
+<span class="ironroot-badge ironroot-badge--stage">Stage: Alpha</span>
+<span class="ironroot-badge ironroot-badge--status">Status: Draft</span>
+</div>
 
 `ironroot-client` enrolls machines, generates private keys locally, sends CSRs to IronRoot, and writes certificates in a service-friendly layout.
 

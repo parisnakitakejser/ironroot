@@ -1,6 +1,9 @@
 # Binary Observability
 
-<span class="ironroot-page-status ironroot-page-status--in-progress">Status: In progress</span>
+<div class="ironroot-doc-meta" markdown>
+<span class="ironroot-badge ironroot-badge--stage">Stage: Alpha</span>
+<span class="ironroot-badge ironroot-badge--status">Status: Draft</span>
+</div>
 
 For binary deployments, configure telemetry in `/etc/ironroot/config.yaml` or with environment variables in the systemd unit.
 

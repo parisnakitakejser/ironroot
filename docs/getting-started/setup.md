@@ -1,6 +1,9 @@
 # Setup Guide
 
-<span class="ironroot-page-status ironroot-page-status--in-progress">Status: In progress</span>
+<div class="ironroot-doc-meta" markdown>
+<span class="ironroot-badge ironroot-badge--stage">Stage: Alpha</span>
+<span class="ironroot-badge ironroot-badge--status">Status: Draft</span>
+</div>
 
 Create the offline Root CA outside the server runtime. Keep the root private key disconnected from the online environment.
 
@@ -12,4 +15,3 @@ Create or import an Intermediate CA signed by the Root CA, then mount the follow
 - `intermediate.key` or encrypted equivalent
 
 The default config expects local development paths under `./pki`. Container and Kubernetes deployments mount CA material at `/pki`.
-

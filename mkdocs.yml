@@ -42,122 +42,155 @@ plugins:
 nav:
   - Getting Started:
       - Overview: index.md
-      - Local Quick Start: getting-started/local-quickstart.md
-      - Quick Start: getting-started/quick-start.md
-      - Setup Guide: getting-started/setup.md
+      - First Steps:
+          - Local Quick Start: getting-started/local-quickstart.md
+          - Quick Start: getting-started/quick-start.md
+          - Setup Guide: getting-started/setup.md
   - Architecture:
       - Overview: architecture/index.md
-      - Components: architecture/components.md
-      - Trust Model: architecture/trust-model.md
-      - Root CA: architecture/offline-root-ca.md
-      - Intermediate CA: architecture/online-intermediate-ca.md
-      - API Server: architecture/api-server.md
-      - Admin CLI: architecture/admin-cli.md
-      - Client CLI: architecture/client-cli.md
-      - OpenTelemetry: architecture/telemetry.md
-      - Security Boundaries: architecture/trust-boundaries.md
-      - Airgap Design: architecture/airgap.md
-      - Certificate Lifecycle: architecture/certificate-lifecycle.md
-      - Root Rotation: architecture/root-rotation.md
-      - Deployment Models: architecture/deployment-models.md
-      - Diagrams: diagrams/index.md
+      - System Model:
+          - Components: architecture/components.md
+          - Trust Model: architecture/trust-model.md
+          - Security Boundaries: architecture/trust-boundaries.md
+          - Deployment Models: architecture/deployment-models.md
+      - PKI Model:
+          - PKI Concepts: pki-concepts/index.md
+          - Root CA Concept: pki-concepts/root-ca.md
+          - Intermediate CA Concept: pki-concepts/intermediate-ca.md
+          - Certificate Chain: pki-concepts/certificate-chain.md
+          - Root CA: architecture/offline-root-ca.md
+          - Intermediate CA: architecture/online-intermediate-ca.md
+          - Certificate Lifecycle: architecture/certificate-lifecycle.md
+          - Root Rotation: architecture/root-rotation.md
+      - Platform Components:
+          - API Server: architecture/api-server.md
+          - Admin CLI: architecture/admin-cli.md
+          - Client CLI: architecture/client-cli.md
+          - OpenTelemetry: architecture/telemetry.md
+          - Airgap Design: architecture/airgap.md
+      - Reference:
+          - Diagrams: diagrams/index.md
   - Installation:
-      - Binary: installation/binary.md
-      - Podman: podman/index.md
-      - Podman TLS Usage: podman/tls-usage.md
-      - Helm Installation: installation/helm.md
-      - Configuration: installation/configuration.md
-      - Upgrades: installation/upgrades.md
-      - Uninstall: installation/uninstall.md
-      - Local Development: installation/local-development.md
-      - Airgap Deployment: installation/airgap-deployment.md
+      - Install Methods:
+          - Binary: installation/binary.md
+          - Podman: podman/index.md
+          - Kubernetes Helm: installation/helm.md
+          - Airgap Deployment: installation/airgap-deployment.md
+      - Configure:
+          - Configuration: installation/configuration.md
+          - Local Development: installation/local-development.md
+      - Runtime TLS:
+          - Podman TLS Usage: podman/tls-usage.md
+      - Lifecycle:
+          - Upgrades: installation/upgrades.md
+          - Uninstall: installation/uninstall.md
   - Security:
       - Overview: security/index.md
-      - Bootstrap Guide: security/bootstrap-guide.md
-      - Security Check: security/security-check.md
-      - Offline Root Handling: security/offline-root-handling.md
-      - Root CA Best Practices: security/root-ca-best-practices.md
-      - Host Hardening: security/host-hardening.md
-      - Trust Distribution: security/trust-distribution.md
-      - Backup Strategy: security/backup-strategy.md
-      - Disaster Recovery: security/disaster-recovery.md
-      - Threat Model: security/threat-model.md
-      - Kubernetes Security: security/kubernetes-security.md
-      - Podman Security: security/podman-security.md
+      - Bootstrap And Checks:
+          - Bootstrap Guide: security/bootstrap-guide.md
+          - Security Check: security/security-check.md
+      - Trust And CA Handling:
+          - Offline Root Handling: security/offline-root-handling.md
+          - Root CA Best Practices: security/root-ca-best-practices.md
+          - Trust Distribution: security/trust-distribution.md
+      - Hardening:
+          - Host Hardening: security/host-hardening.md
+          - Kubernetes Security: security/kubernetes-security.md
+          - Podman Security: security/podman-security.md
+      - Resilience:
+          - Backup Strategy: security/backup-strategy.md
+          - Disaster Recovery: security/disaster-recovery.md
+          - Threat Model: security/threat-model.md
   - Observability:
       - Overview: observability/index.md
-      - Traces: observability/traces.md
-      - Metrics: observability/metrics.md
-      - Logs: observability/logs.md
-      - OpenTelemetry: observability/opentelemetry.md
-      - Grafana: observability/grafana.md
-      - Tempo: observability/tempo.md
-      - Loki: observability/loki.md
-      - Prometheus: observability/prometheus.md
-      - Alerting: observability/alerting.md
-      - Dashboards: observability/dashboards.md
-      - Collector: observability/collector.md
-      - Kubernetes: observability/kubernetes.md
-      - Podman: observability/podman.md
-      - Binary: observability/binary.md
+      - Signals:
+          - Traces: observability/traces.md
+          - Metrics: observability/metrics.md
+          - Logs: observability/logs.md
+      - OpenTelemetry Stack:
+          - OpenTelemetry: observability/opentelemetry.md
+          - Collector: observability/collector.md
+          - Prometheus: observability/prometheus.md
+          - Tempo: observability/tempo.md
+          - Loki: observability/loki.md
+          - Grafana: observability/grafana.md
+      - Operations:
+          - Dashboards: observability/dashboards.md
+          - Alerting: observability/alerting.md
+      - Deployment Integrations:
+          - Kubernetes: observability/kubernetes.md
+          - Podman: observability/podman.md
+          - Binary: observability/binary.md
   - Kubernetes:
       - Overview: kubernetes/index.md
-      - Helm Installation: kubernetes/helm-installation.md
-      - Values Reference: kubernetes/values-reference.md
-      - TLS Usage: kubernetes/tls-usage.md
-      - Security: kubernetes/security.md
-      - Observability: kubernetes/observability.md
+      - Deploy:
+          - Helm Installation: kubernetes/helm-installation.md
+          - Values Reference: kubernetes/values-reference.md
+      - Operate:
+          - TLS Usage: kubernetes/tls-usage.md
+          - Security: kubernetes/security.md
+          - Observability: kubernetes/observability.md
   - Airgap:
       - Overview: airgap/overview.md
-      - Root CA Handling: airgap/root-ca-handling.md
-      - Offline Root Workflow: airgap/offline-signing.md
-      - Artifact Mirroring: airgap/artifact-mirroring.md
-      - Helm Mirroring: airgap/mirroring-helm.md
-      - Container Mirroring: airgap/container-mirroring.md
-      - Binary Distribution: airgap/binary-distribution.md
-      - Trust Distribution: airgap/distributing-trust.md
-      - Airgap Upgrades: airgap/upgrades.md
-      - Airgap Recovery: airgap/recovery.md
-      - Legacy Helm Mirror Page: airgap/mirroring-helm-chart.md
+      - Offline Trust:
+          - Root CA Handling: airgap/root-ca-handling.md
+          - Offline Root Workflow: airgap/offline-signing.md
+          - Trust Distribution: airgap/distributing-trust.md
+      - Artifact Movement:
+          - Artifact Mirroring: airgap/artifact-mirroring.md
+          - Helm Mirroring: airgap/mirroring-helm.md
+          - Container Mirroring: airgap/container-mirroring.md
+          - Binary Distribution: airgap/binary-distribution.md
+          - Legacy Helm Mirror Page: airgap/mirroring-helm-chart.md
+      - Operations:
+          - Airgap Upgrades: airgap/upgrades.md
+          - Airgap Recovery: airgap/recovery.md
   - Operations:
       - Overview: operations/index.md
-      - Certificate Rotation: operations/certificate-rotation.md
-      - Intermediate Rotation: operations/intermediate-rotation.md
-      - Root Migration: operations/root-migration.md
-      - Backups: operations/backups.md
-      - Restore: operations/restore.md
-      - Disaster Recovery: operations/disaster-recovery.md
-      - Troubleshooting: operations/troubleshooting.md
-      - Performance: operations/performance.md
-      - Scaling: operations/scaling.md
-      - Monitoring: operations/monitoring.md
+      - Certificate Operations:
+          - Certificate Rotation: operations/certificate-rotation.md
+          - Intermediate Rotation: operations/intermediate-rotation.md
+          - Root Migration: operations/root-migration.md
+      - Recovery:
+          - Backups: operations/backups.md
+          - Restore: operations/restore.md
+          - Disaster Recovery: operations/disaster-recovery.md
+      - Runbooks:
+          - Troubleshooting: operations/troubleshooting.md
+          - Monitoring: operations/monitoring.md
+          - Performance: operations/performance.md
+          - Scaling: operations/scaling.md
   - API & CLI:
-      - REST API: api/index.md
-      - ironroot-admin: api-cli/ironroot-admin.md
-      - ironroot-client: api-cli/ironroot-client.md
-      - Configuration Reference: cli/configuration-reference.md
-      - Environment Variables: cli/environment-variables.md
-      - Examples: cli/examples.md
-  - Development:
-      - Contributing: contributing/index.md
-      - Local Development: development/local-development.md
-      - Docs Development: development/docs-development.md
-      - Project Structure: development/project-structure.md
-      - CI/CD: development/ci-cd.md
-      - Testing: development/testing.md
-      - Release Process: development/release-process.md
-      - Helm Development: development/helm.md
-      - OpenTelemetry Development: development/opentelemetry.md
-  - Community:
-      - Roadmap: community/roadmap.md
-      - Governance: community/governance.md
-      - Code of Conduct: community/code-of-conduct.md
-      - Security Policy: community/security-policy.md
-      - Support: community/support.md
-      - Discussions: community/discussions.md
-      - Releases: community/releases.md
-  - PKI Concepts:
-      - Overview: pki-concepts/index.md
-      - Root CA: pki-concepts/root-ca.md
-      - Intermediate CA: pki-concepts/intermediate-ca.md
-      - Certificate Chain: pki-concepts/certificate-chain.md
+      - API:
+          - REST API: api/index.md
+      - CLI:
+          - ironroot-admin: api-cli/ironroot-admin.md
+          - ironroot-client: api-cli/ironroot-client.md
+          - Examples: cli/examples.md
+      - Configuration:
+          - Configuration Reference: cli/configuration-reference.md
+          - Environment Variables: cli/environment-variables.md
+  - Contributing:
+      - contributing/index.md
+      - Start Here:
+          - Local Development: contributing/local-development.md
+          - Platform Setup: contributing/platform-setup.md
+      - Contributor Workflow:
+          - Project Structure: contributing/project-structure.md
+          - Testing: contributing/testing.md
+          - CI/CD: contributing/ci-cd.md
+          - Documentation Development: contributing/docs-development.md
+          - Documentation Standards: contributing/documentation-standards.md
+      - Specialized Development:
+          - Helm Development: contributing/helm.md
+          - OpenTelemetry Development: contributing/opentelemetry.md
+      - Releases And Roadmap:
+          - Release Process: contributing/release-process.md
+          - Releases: contributing/releases.md
+          - Roadmap: contributing/roadmap.md
+      - Project Community:
+          - Governance: contributing/governance.md
+          - Code of Conduct: contributing/code-of-conduct.md
+          - Security Policy: contributing/security-policy.md
+          - Support: contributing/support.md
+          - Discussions: contributing/discussions.md

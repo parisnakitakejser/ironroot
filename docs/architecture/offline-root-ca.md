@@ -1,6 +1,9 @@
 # Offline Root CA
 
-<span class="ironroot-page-status ironroot-page-status--in-progress">Status: In progress</span>
+<div class="ironroot-doc-meta" markdown>
+<span class="ironroot-badge ironroot-badge--stage">Stage: Alpha</span>
+<span class="ironroot-badge ironroot-badge--status">Status: Draft</span>
+</div>
 
 The Root CA is the trust anchor. It should not be an always-on service. It should ideally live on an offline or air-gapped machine and only be powered on or mounted when signing a new Intermediate CA or performing a planned root migration.
 
@@ -76,4 +79,3 @@ timeline
 ```
 
 IronRoot's CA generation schema is designed for this phased model. Existing certificates can continue until expiry while new certificates are issued from the new Intermediate.
-

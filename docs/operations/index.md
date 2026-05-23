@@ -1,6 +1,9 @@
 # Operations
 
-<span class="ironroot-page-status ironroot-page-status--in-progress">Status: In progress</span>
+<div class="ironroot-doc-meta" markdown>
+<span class="ironroot-badge ironroot-badge--stage">Stage: Alpha</span>
+<span class="ironroot-badge ironroot-badge--status">Status: Draft</span>
+</div>
 
 Operating IronRoot safely means treating it as trust infrastructure, not just another internal API.
 
@@ -82,4 +85,3 @@ Certificate request failures:
 - verify CSR signature
 - verify DNS names are valid
 - verify Intermediate CA is not expired
-

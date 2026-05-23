@@ -1,6 +1,9 @@
 # REST API
 
-<span class="ironroot-page-status ironroot-page-status--in-progress">Status: In progress</span>
+<div class="ironroot-doc-meta" markdown>
+<span class="ironroot-badge ironroot-badge--stage">Stage: Alpha</span>
+<span class="ironroot-badge ironroot-badge--status">Status: Draft</span>
+</div>
 
 | Method | Path | Purpose |
 | --- | --- | --- |
@@ -16,4 +19,3 @@
 | GET | `/v1/audit` | Audit log entries |
 
 Clients propagate W3C Trace Context headers so the server can continue command traces.
-

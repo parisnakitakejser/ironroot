@@ -1,6 +1,9 @@
 # Component Architecture
 
-<span class="ironroot-page-status ironroot-page-status--in-progress">Status: In progress</span>
+<div class="ironroot-doc-meta" markdown>
+<span class="ironroot-badge ironroot-badge--stage">Stage: Alpha</span>
+<span class="ironroot-badge ironroot-badge--status">Status: Draft</span>
+</div>
 
 IronRoot is intentionally split into components with different trust levels. The split exists to keep the long-lived Root CA offline while still allowing automated certificate issuance for servers, clients, and Kubernetes workloads.
 
@@ -59,4 +62,3 @@ sequenceDiagram
 ```
 
 The API receives CSRs, not private keys. The Intermediate CA signs certificates online because automation requires it. The Root CA stays offline to limit the blast radius if the online server is compromised.
-

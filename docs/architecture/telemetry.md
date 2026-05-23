@@ -1,6 +1,9 @@
 # OpenTelemetry Architecture
 
-<span class="ironroot-page-status ironroot-page-status--in-progress">Status: In progress</span>
+<div class="ironroot-doc-meta" markdown>
+<span class="ironroot-badge ironroot-badge--stage">Stage: Alpha</span>
+<span class="ironroot-badge ironroot-badge--status">Status: Draft</span>
+</div>
 
 Observability matters in PKI because certificate operations are security-sensitive operational events. Operators need to answer who enrolled, who requested a certificate, what issuer signed it, whether renewals are succeeding, and whether failures are clustered around a service or environment.
 
@@ -45,4 +48,3 @@ flowchart TD
 ```
 
 Client commands create root spans. Server requests continue traces through W3C Trace Context. Security-check emits per-category spans and result metrics by severity and status.
-

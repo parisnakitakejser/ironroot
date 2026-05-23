@@ -1,6 +1,9 @@
 # PKI Concepts
 
-<span class="ironroot-page-status ironroot-page-status--in-progress">Status: In progress</span>
+<div class="ironroot-doc-meta" markdown>
+<span class="ironroot-badge ironroot-badge--stage">Stage: Alpha</span>
+<span class="ironroot-badge ironroot-badge--status">Status: Draft</span>
+</div>
 
 ## Offline Root CA
 
@@ -17,4 +20,3 @@ Server and workload certificates default to 90 days. Renewal is supported before
 ## Private keys
 
 Clients generate private keys locally. IronRoot servers sign CSRs and must not generate normal client or server private keys.
-

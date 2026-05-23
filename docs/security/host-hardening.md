@@ -1,6 +1,9 @@
 # Host Hardening
 
-<span class="ironroot-page-status ironroot-page-status--in-progress">Status: In progress</span>
+<div class="ironroot-doc-meta" markdown>
+<span class="ironroot-badge ironroot-badge--stage">Stage: Alpha</span>
+<span class="ironroot-badge ironroot-badge--status">Status: Draft</span>
+</div>
 
 IronRoot should run on a small, controlled host or Kubernetes workload with clear ownership of config, data, and PKI material.
 
@@ -26,4 +29,3 @@ For Kubernetes:
 - use a PVC for SQLite data
 - configure liveness and readiness probes
 - add a NetworkPolicy for the API server
-

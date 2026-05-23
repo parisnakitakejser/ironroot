@@ -12,6 +12,17 @@
 
 IronRoot is a modern internal PKI platform for air-gapped environments, offline-root security, observable certificate operations, Kubernetes-native deployments, and self-hosted infrastructure.
 
+## Documentation maturity
+
+IronRoot is currently Alpha-stage. Documentation pages use maturity badges so readers can quickly see how complete and validated a workflow is:
+
+- **Stage** describes feature maturity, from Concept through Mature.
+- **Status** describes documentation state, such as Draft, In Progress, Experimental, Stable, or Deprecated.
+- **Validation badges** are only used when workflows have been tested in that environment.
+- **Capability badges** identify implemented capabilities such as OpenTelemetry support or zero-trust-oriented workflows.
+
+Most pages currently use `Stage: Alpha` and `Status: Draft`. The primary onboarding path is **Contributing > Local Development**, currently marked `Status: In Progress` with the validated local workflow badges. See `docs/contributing/documentation-standards.md` for the badge model.
+
 ## What the name means
 
 **Iron** represents hardened infrastructure, durability, security, industrial-grade systems, and an airgap-first mindset.

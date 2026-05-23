@@ -1,6 +1,9 @@
 # CLI Architecture
 
-<span class="ironroot-page-status ironroot-page-status--in-progress">Status: In progress</span>
+<div class="ironroot-doc-meta" markdown>
+<span class="ironroot-badge ironroot-badge--stage">Stage: Alpha</span>
+<span class="ironroot-badge ironroot-badge--status">Status: Draft</span>
+</div>
 
 IronRoot has two operational CLIs with different trust levels.
 
@@ -72,4 +75,3 @@ flowchart LR
 ### Trust Installation Lifecycle
 
 The client can fetch the Root CA bundle and write it to a local trust output directory. Operators should decide how that bundle is installed into OS or application trust stores.
-

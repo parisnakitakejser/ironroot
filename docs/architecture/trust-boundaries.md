@@ -1,6 +1,9 @@
 # Security Boundaries
 
-<span class="ironroot-page-status ironroot-page-status--in-progress">Status: In progress</span>
+<div class="ironroot-doc-meta" markdown>
+<span class="ironroot-badge ironroot-badge--stage">Stage: Alpha</span>
+<span class="ironroot-badge ironroot-badge--status">Status: Draft</span>
+</div>
 
 IronRoot is designed around explicit trust boundaries. Each boundary limits what an attacker can reach if one layer is compromised.
 
@@ -66,4 +69,3 @@ The secure model is not just "install the server." It is:
 6. Let clients generate private keys locally and send CSRs only.
 7. Back up the database and Intermediate CA material together.
 8. Keep Root CA recovery material offline and encrypted.
-
