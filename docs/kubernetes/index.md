@@ -19,3 +19,4 @@ The deployment includes:
 
 PostgreSQL configuration values are reserved for a future backend implementation.
 
+For Helm-based installs, see [Helm Installation](helm-installation.md).

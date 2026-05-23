@@ -1,0 +1,135 @@
+replicaCount: 1
+
+image:
+  repository: ghcr.io/OWNER/ironroot
+  tag: ""
+  pullPolicy: IfNotPresent
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  create: true
+  annotations: {}
+  name: ""
+
+podAnnotations: {}
+podLabels: {}
+
+podSecurityContext:
+  runAsNonRoot: true
+  seccompProfile:
+    type: RuntimeDefault
+
+securityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  capabilities:
+    drop:
+      - ALL
+
+server:
+  port: 8443
+
+config:
+  logLevel: info
+  database:
+    type: sqlite
+    sqlite:
+      path: /data/ironroot.db
+    postgres:
+      enabled: false
+      host: ""
+      port: 5432
+      database: ironroot
+      user: ironroot
+      existingSecret: ""
+      passwordKey: password
+  telemetry:
+    enabled: false
+    endpoint: ""
+    protocol: grpc
+    serviceName: ironroot
+    serviceVersion: ""
+    environment: production
+    samplingRatio: 1
+  extra: {}
+
+persistence:
+  enabled: true
+  size: 1Gi
+  storageClass: ""
+  accessModes:
+    - ReadWriteOnce
+
+pki:
+  existingSecret: ""
+  createSecret: false
+  mountPath: /pki
+  rootCa: ""
+  caChain: ""
+  intermediateCert: ""
+  intermediateKey: ""
+  intermediateKeyPass: ""
+
+tls:
+  enabled: true
+  existingSecret: ""
+  createSecret: false
+  cert: ""
+  key: ""
+
+service:
+  type: ClusterIP
+  port: 8443
+  annotations: {}
+
+ingress:
+  enabled: false
+  className: ""
+  annotations: {}
+  hosts:
+    - host: ironroot.local
+      paths:
+        - path: /
+          pathType: Prefix
+  tls: []
+
+networkPolicy:
+  enabled: false
+  ingressFrom: []
+  egress: []
+
+serviceMonitor:
+  enabled: false
+  labels: {}
+  interval: 30s
+  scrapeTimeout: 10s
+
+resources: {}
+
+livenessProbe:
+  enabled: true
+  path: /healthz
+  initialDelaySeconds: 10
+  periodSeconds: 10
+  timeoutSeconds: 2
+  failureThreshold: 3
+
+readinessProbe:
+  enabled: true
+  path: /readyz
+  initialDelaySeconds: 5
+  periodSeconds: 10
+  timeoutSeconds: 2
+  failureThreshold: 3
+
+env: []
+extraEnv: []
+extraVolumes: []
+extraVolumeMounts: []
+
+nodeSelector: {}
+tolerations: []
+affinity: {}

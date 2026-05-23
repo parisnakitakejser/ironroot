@@ -1,0 +1,20 @@
+ingress:
+  enabled: true
+  className: nginx
+  annotations:
+    nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
+  hosts:
+    - host: ironroot.example.internal
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - secretName: ironroot-ingress-tls
+      hosts:
+        - ironroot.example.internal
+
+pki:
+  existingSecret: ironroot-ca
+
+tls:
+  existingSecret: ironroot-api-tls

@@ -1,0 +1,15 @@
+IronRoot has been installed.
+
+Service:
+  {{ include "ironroot.fullname" . }}.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.service.port }}
+
+CA material must be supplied through Kubernetes Secret:
+  {{ include "ironroot.pkiSecretName" . }}
+
+{{- if .Values.tls.enabled }}
+API TLS secret:
+  {{ include "ironroot.tlsSecretName" . }}
+{{- end }}
+
+Run a security check from a workstation with the admin CLI:
+  ironroot-admin security-check --config ./config.yaml --output table

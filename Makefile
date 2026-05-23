@@ -1,9 +1,10 @@
 GO ?= go
 IMAGE ?= localhost/ironroot:dev
 CONTAINERFILE ?= Containerfile
+HELM_CHART ?= deploy/helm/ironroot
 GOFILES := $(shell find . -name '*.go' -not -path './vendor/*')
 
-.PHONY: build fmt fmt-check vet lint test test-e2e docs-serve docs-build container-build security-govulncheck coverage
+.PHONY: build fmt fmt-check vet lint test test-e2e docs-serve docs-build container-build security-govulncheck helm-lint helm-template helm-package helm-test coverage
 
 build:
 	$(GO) build -o bin/ironroot-server ./cmd/server
@@ -52,6 +53,19 @@ container-build:
 
 security-govulncheck:
 	govulncheck ./...
+
+helm-lint:
+	helm lint $(HELM_CHART)
+
+helm-template:
+	helm template ironroot $(HELM_CHART)
+
+helm-package:
+	mkdir -p dist/charts
+	helm package $(HELM_CHART) --destination dist/charts
+
+helm-test:
+	scripts/helm-test.sh $(HELM_CHART)
 
 coverage:
 	$(GO) test ./... -coverprofile=coverage.out

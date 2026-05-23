@@ -1,0 +1,14 @@
+config:
+  telemetry:
+    enabled: true
+    endpoint: opentelemetry-collector.observability.svc:4317
+    protocol: grpc
+    serviceName: ironroot
+    environment: production
+    samplingRatio: 0.25
+
+pki:
+  existingSecret: ironroot-ca
+
+tls:
+  existingSecret: ironroot-api-tls

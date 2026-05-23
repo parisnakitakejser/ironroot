@@ -7,7 +7,7 @@
 
 > Airgap-first trust infrastructure
 
-<!-- Logo placeholder: docs/assets/logo-placeholder.png -->
+![IronRoot social logo](logos/logo-social.png)
 
 IronRoot is a modern internal PKI platform for air-gapped environments, offline-root security, observable certificate operations, Kubernetes-native deployments, and self-hosted infrastructure.
 
@@ -76,6 +76,30 @@ Kubernetes manifests live in `deploy/kubernetes`. The Podman-compatible image bu
 make container-build
 kubectl apply -k deploy/kubernetes
 ```
+
+## Install with Helm
+
+IronRoot publishes its Helm chart as an OCI artifact. Use `OWNER` as a placeholder for the GitHub organization or account that publishes your fork.
+
+Install an RC chart:
+
+```bash
+helm install ironroot oci://ghcr.io/OWNER/charts/ironroot \
+  --version 0.1.0-rc.1 \
+  --namespace ironroot \
+  --create-namespace
+```
+
+Install a stable chart:
+
+```bash
+helm install ironroot oci://ghcr.io/OWNER/charts/ironroot \
+  --version 0.1.0 \
+  --namespace ironroot \
+  --create-namespace
+```
+
+Air-gapped environments should mirror both `ghcr.io/OWNER/ironroot:<version>` and `oci://ghcr.io/OWNER/charts/ironroot`, or download the chart `.tgz` from the GitHub Release and move it through the approved offline package path.
 
 ## Documentation
 

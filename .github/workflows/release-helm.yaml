@@ -1,0 +1,131 @@
+name: Release Helm Chart
+
+on:
+  push:
+    tags:
+      - "v*.*.*-rc.*"
+      - "v*.*.*"
+      - "chart-v*.*.*"
+
+permissions:
+  contents: write
+  packages: write
+  id-token: write
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+  CHART_DIR: deploy/helm/ironroot
+
+jobs:
+  release:
+    name: Build image and publish chart
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Set up Helm
+        uses: azure/setup-helm@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Prepare release metadata
+        id: meta
+        shell: bash
+        run: |
+          set -euo pipefail
+          RAW_TAG="${GITHUB_REF_NAME}"
+          APP_TAG="${RAW_TAG#chart-}"
+          CHART_VERSION="${APP_TAG#v}"
+          PRERELEASE=false
+          if [[ "$APP_TAG" == *"-rc."* ]]; then
+            PRERELEASE=true
+          fi
+          IMAGE_TAGS="${REGISTRY}/${IMAGE_NAME}:${APP_TAG}"
+          if [[ "$PRERELEASE" == "false" && "$APP_TAG" == v* ]]; then
+            IMAGE_TAGS="${IMAGE_TAGS}"$'\n'"${REGISTRY}/${IMAGE_NAME}:latest"
+          fi
+          {
+            echo "raw_tag=${RAW_TAG}"
+            echo "app_tag=${APP_TAG}"
+            echo "chart_version=${CHART_VERSION}"
+            echo "prerelease=${PRERELEASE}"
+            echo "image_tags<<EOF"
+            echo "${IMAGE_TAGS}"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Go tests
+        run: make test
+
+      - name: End-to-end tests
+        run: make test-e2e
+
+      - name: Docker login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Containerfile
+          push: true
+          tags: ${{ steps.meta.outputs.image_tags }}
+
+      - name: Update chart version
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+          import os
+          chart = Path(os.environ["CHART_DIR"]) / "Chart.yaml"
+          version = os.environ["CHART_VERSION"]
+          app_version = os.environ["APP_TAG"]
+          lines = chart.read_text().splitlines()
+          out = []
+          for line in lines:
+              if line.startswith("version:"):
+                  out.append(f"version: {version}")
+              elif line.startswith("appVersion:"):
+                  out.append(f'appVersion: "{app_version}"')
+              else:
+                  out.append(line)
+          chart.write_text("\n".join(out) + "\n")
+          PY
+        env:
+          CHART_VERSION: ${{ steps.meta.outputs.chart_version }}
+          APP_TAG: ${{ steps.meta.outputs.app_tag }}
+
+      - name: Helm lint
+        run: make helm-lint
+
+      - name: Package chart
+        run: |
+          mkdir -p dist/charts
+          helm package "$CHART_DIR" --destination dist/charts
+
+      - name: Helm login to GHCR
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | helm registry login ghcr.io --username "${{ github.actor }}" --password-stdin
+
+      - name: Push chart OCI artifact
+        run: helm push dist/charts/ironroot-${{ steps.meta.outputs.chart_version }}.tgz oci://ghcr.io/${{ github.repository_owner }}/charts
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          prerelease: ${{ steps.meta.outputs.prerelease }}
+          files: dist/charts/ironroot-${{ steps.meta.outputs.chart_version }}.tgz
+          generate_release_notes: true

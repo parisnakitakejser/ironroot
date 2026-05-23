@@ -44,6 +44,8 @@ nav:
   - Installation:
       - Podman: podman/index.md
       - Kubernetes: kubernetes/index.md
+      - Helm Installation: kubernetes/helm-installation.md
+      - Helm Values: kubernetes/values-reference.md
   - Configuration: configuration/index.md
   - CLI: cli/index.md
   - API: api/index.md
@@ -56,6 +58,10 @@ nav:
       - Offline Root Handling: security/offline-root-handling.md
       - Host Hardening: security/host-hardening.md
   - Migration: migration/index.md
+  - Releases:
+      - Helm Releases: release/helm-releases.md
+  - Airgap:
+      - Mirror Helm Chart: airgap/mirroring-helm-chart.md
   - Development: development/index.md
   - Contributing: contributing/index.md
   - Roadmap: roadmap/index.md

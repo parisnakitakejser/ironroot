@@ -1,0 +1,20 @@
+config:
+  database:
+    type: postgres
+    postgres:
+      enabled: true
+      host: postgres.database.svc
+      port: 5432
+      database: ironroot
+      user: ironroot
+      existingSecret: ironroot-postgres
+      passwordKey: password
+
+persistence:
+  enabled: false
+
+pki:
+  existingSecret: ironroot-ca
+
+tls:
+  existingSecret: ironroot-api-tls
