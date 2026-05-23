@@ -1,7 +1,7 @@
 # IronRoot
 
 ![Apache 2.0](https://img.shields.io/badge/license-Apache%202.0-blue)
-![Go](https://img.shields.io/badge/go-1.26.3-00ADD8)
+![Go](https://img.shields.io/badge/go-1.26-00ADD8)
 ![CI](https://github.com/ironroot/ironroot/actions/workflows/pr-checks.yaml/badge.svg)
 ![Docs](https://img.shields.io/badge/docs-MkDocs-526CFE)
 ![Website](https://github.com/ironroot/ironroot/actions/workflows/docs-website.yaml/badge.svg)
