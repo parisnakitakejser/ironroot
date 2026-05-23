@@ -45,6 +45,7 @@ build-all: build-linux build-macos
 
 # Install current-platform binaries into INSTALL_PREFIX/bin.
 install-local: build-local
+    @echo "Installing freshly built binaries from ./bin into {{install_prefix}}/bin"
     mkdir -p {{install_prefix}}/bin
     cp bin/ironroot-server bin/ironroot-admin bin/ironroot-client {{install_prefix}}/bin/
 

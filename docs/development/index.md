@@ -31,6 +31,8 @@ echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc
 source ~/.bashrc
 ```
 
+`make install-local` and `just install-local` rebuild current-platform binaries before installing them, so the installed commands match the latest checkout.
+
 For zsh:
 
 ```bash

@@ -33,11 +33,22 @@ flowchart TD
 ```bash
 ironroot-admin ca create-root \
   --name "IronRoot Local Root CA" \
-  --password ironroot-local-root \
+  --key-password ironroot-local-root \
   --out ./pki/root
 ```
 
-This writes `root-ca.key` and `root-ca.crt`. The private key is encrypted. Keep it away from the online server in production.
+This beginner command still uses production-minded defaults: ECDSA P-384, 20 year validity, encrypted private key, max path length 1, and no leaf certificate usages on the Root CA.
+
+It writes:
+
+- `root-ca.key`: encrypted private key; keep offline in production.
+- `root-ca.crt`: public Root CA certificate; distribute as trust material.
+- `root-ca.pub`: public key.
+- `root-ca.pem` and `root-ca.der`: export formats.
+- `metadata.json`: Root CA settings and fingerprints.
+- `fingerprints.txt`: SHA-256 fingerprint for verification.
+- `recovery.txt`: backup and recovery reminders.
+- `trust-bundle/root-ca.crt`: public trust bundle copy.
 
 ## 2. Generate an Intermediate CA
 

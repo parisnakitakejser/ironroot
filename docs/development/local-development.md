@@ -103,6 +103,8 @@ Or use the task runner:
 just install-local
 ```
 
+`just install-local` depends on `just build-local`, so it always rebuilds the current-platform binaries before installing them. Use it when you want the binaries in `~/.local/bin` to reflect the latest checkout.
+
 Verify:
 
 ```bash
@@ -191,8 +193,11 @@ Generate a local Root CA:
 ```bash
 ironroot-admin ca create-root \
   --name "IronRoot Local Root CA" \
+  --key-password ironroot-local-root \
   --out .localdev/pki/root
 ```
+
+The local command uses the same Root CA defaults that production operators start from: ECDSA P-384, encrypted private key, 20 year validity, max path length 1, and CA signing only. The generated `root-ca.key` is sensitive; the generated `root-ca.crt` and `trust-bundle/root-ca.crt` are public trust material.
 
 Generate a local Intermediate CA:
 
@@ -200,7 +205,18 @@ Generate a local Intermediate CA:
 ironroot-admin ca create-intermediate \
   --root-cert .localdev/pki/root/root-ca.crt \
   --root-key .localdev/pki/root/root-ca.key \
+  --root-password ironroot-local-root \
+  --password ironroot-local-intermediate \
   --out .localdev/pki/intermediate
+```
+
+Inspect the generated CA material:
+
+```bash
+ironroot-admin ca inspect \
+  --output table \
+  .localdev/pki/root/root-ca.crt \
+  .localdev/pki/intermediate/intermediate-ca.crt
 ```
 
 Run the first-run bootstrap guide:

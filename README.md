@@ -78,6 +78,8 @@ just build-all
 just install-local
 ```
 
+`just install-local` runs `just build-local` first, then copies the freshly built binaries into your local install prefix.
+
 The Makefile remains available for CI and compatibility, so `make build-local` still works.
 
 ```bash

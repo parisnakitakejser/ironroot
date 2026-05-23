@@ -75,6 +75,7 @@ nav:
       - Bootstrap Guide: security/bootstrap-guide.md
       - Security Check: security/security-check.md
       - Offline Root Handling: security/offline-root-handling.md
+      - Root CA Best Practices: security/root-ca-best-practices.md
       - Host Hardening: security/host-hardening.md
       - Trust Distribution: security/trust-distribution.md
       - Backup Strategy: security/backup-strategy.md
@@ -130,7 +131,7 @@ nav:
       - Monitoring: operations/monitoring.md
   - API & CLI:
       - REST API: api/index.md
-      - ironroot-admin: cli/admin.md
+      - ironroot-admin: api-cli/ironroot-admin.md
       - ironroot-client: cli/client.md
       - Configuration Reference: cli/configuration-reference.md
       - Environment Variables: cli/environment-variables.md
@@ -153,3 +154,8 @@ nav:
       - Support: community/support.md
       - Discussions: community/discussions.md
       - Releases: community/releases.md
+  - PKI Concepts:
+      - Overview: pki-concepts/index.md
+      - Root CA: pki-concepts/root-ca.md
+      - Intermediate CA: pki-concepts/intermediate-ca.md
+      - Certificate Chain: pki-concepts/certificate-chain.md
