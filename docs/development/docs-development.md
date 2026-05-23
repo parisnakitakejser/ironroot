@@ -30,6 +30,14 @@ make docs-deploy-local
 
 The generated static site is written to `site/`.
 
+Avoid running a globally installed `mkdocs` unless you have installed the project documentation dependencies into that same Python environment:
+
+```bash
+python -m pip install -r docs/requirements.txt
+```
+
+The project Makefile is preferred because it uses `.venv-docs` and avoids missing-extension errors such as `No module named 'pymdownx'`.
+
 ## GitHub Pages Publishing
 
 GitHub Pages should be configured to serve from:
