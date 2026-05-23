@@ -1,5 +1,7 @@
 # Component Architecture
 
+<span class="ironroot-page-status ironroot-page-status--in-progress">Status: In progress</span>
+
 IronRoot is intentionally split into components with different trust levels. The split exists to keep the long-lived Root CA offline while still allowing automated certificate issuance for servers, clients, and Kubernetes workloads.
 
 ## Component Responsibilities

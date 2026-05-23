@@ -1,5 +1,7 @@
 # Root CA Handling
 
+<span class="ironroot-page-status ironroot-page-status--in-progress">Status: In progress</span>
+
 The Root CA should be generated and stored offline. It should not run continuously and should only sign Intermediate CA certificates.
 
 Do not place the Root CA private key:

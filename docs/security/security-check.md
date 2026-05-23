@@ -1,5 +1,7 @@
 # Security Check
 
+<span class="ironroot-page-status ironroot-page-status--in-progress">Status: In progress</span>
+
 `ironroot-admin security-check` inspects the host, IronRoot config, CA material, database posture, API TLS settings, bootstrap token posture, audit logging, telemetry, and runtime environment.
 
 ```bash

@@ -1,5 +1,7 @@
 # Offline Signing
 
+<span class="ironroot-page-status ironroot-page-status--in-progress">Status: In progress</span>
+
 Offline signing keeps the Root CA private key away from the online IronRoot server.
 
 Workflow:

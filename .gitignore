@@ -40,3 +40,6 @@ go.work.sum
 ### Python docs environment
 .venv-docs/
 site/
+bin
+.gocache
+.localdev

@@ -1,5 +1,7 @@
 # OpenTelemetry Collector
 
+<span class="ironroot-page-status ironroot-page-status--in-progress">Status: In progress</span>
+
 The collector receives OTLP telemetry from IronRoot and forwards it to storage backends.
 
 ```mermaid

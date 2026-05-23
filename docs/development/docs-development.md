@@ -1,5 +1,7 @@
 # Documentation Development
 
+<span class="ironroot-page-status ironroot-page-status--in-progress">Status: In progress</span>
+
 IronRoot publishes the MkDocs Material site from the generated `site/` directory to a dedicated Git branch named `website`.
 
 ## Local Preview

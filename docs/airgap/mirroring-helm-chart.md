@@ -1,5 +1,7 @@
 # Mirroring the Helm Chart
 
+<span class="ironroot-page-status ironroot-page-status--in-progress">Status: In progress</span>
+
 Air-gapped operators should mirror the image and chart through the same approved artifact path used for other infrastructure packages.
 
 Mirror the container image:

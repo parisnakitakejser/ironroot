@@ -1,5 +1,7 @@
 # Airgap Upgrades
 
+<span class="ironroot-page-status ironroot-page-status--in-progress">Status: In progress</span>
+
 Airgap upgrades should be staged:
 
 1. Mirror binaries, images, charts, and documentation.

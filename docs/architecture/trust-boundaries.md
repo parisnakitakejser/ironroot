@@ -1,5 +1,7 @@
 # Security Boundaries
 
+<span class="ironroot-page-status ironroot-page-status--in-progress">Status: In progress</span>
+
 IronRoot is designed around explicit trust boundaries. Each boundary limits what an attacker can reach if one layer is compromised.
 
 ```mermaid

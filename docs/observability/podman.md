@@ -1,5 +1,7 @@
 # Podman Observability
 
+<span class="ironroot-page-status ironroot-page-status--in-progress">Status: In progress</span>
+
 Run IronRoot with OTEL variables pointed at a local collector:
 
 ```bash

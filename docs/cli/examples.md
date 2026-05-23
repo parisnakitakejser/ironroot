@@ -1,5 +1,7 @@
 # CLI Examples
 
+<span class="ironroot-page-status ironroot-page-status--in-progress">Status: In progress</span>
+
 See the local quick start for a complete flow from Root CA creation to browser-trusted HTTPS.
 
 ```bash

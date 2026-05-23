@@ -1,5 +1,7 @@
 # Architecture Overview
 
+<span class="ironroot-page-status ironroot-page-status--in-progress">Status: In progress</span>
+
 IronRoot separates long-lived trust anchors from day-to-day certificate issuance.
 
 ```mermaid

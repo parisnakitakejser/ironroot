@@ -1,5 +1,7 @@
 # Online Intermediate CA
 
+<span class="ironroot-page-status ironroot-page-status--in-progress">Status: In progress</span>
+
 The Intermediate CA is the operational issuing CA. It lives with the IronRoot server because certificate automation needs an online signer, but it is deliberately separated from the Root CA.
 
 ## Why It Exists

@@ -1,5 +1,7 @@
 # Diagrams
 
+<span class="ironroot-page-status ironroot-page-status--in-progress">Status: In progress</span>
+
 ## Trust chain
 
 ```mermaid

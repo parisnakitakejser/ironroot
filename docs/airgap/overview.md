@@ -1,5 +1,7 @@
 # Airgap Overview
 
+<span class="ironroot-page-status ironroot-page-status--in-progress">Status: In progress</span>
+
 An air-gapped environment has no direct Internet access. Software, trust bundles, container images, Helm charts, and binaries move through controlled distribution paths.
 
 IronRoot's model separates offline trust creation from online certificate operations:

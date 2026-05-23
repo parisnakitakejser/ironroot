@@ -1,5 +1,7 @@
 # Deployment Models
 
+<span class="ironroot-page-status ironroot-page-status--in-progress">Status: In progress</span>
+
 IronRoot can run as a binary, a Podman container, or a Kubernetes workload.
 
 | Model | Responsibility |

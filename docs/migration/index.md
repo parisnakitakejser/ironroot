@@ -1,5 +1,7 @@
 # Root Migration
 
+<span class="ironroot-page-status ironroot-page-status--in-progress">Status: In progress</span>
+
 IronRoot is designed for staged Root CA migration:
 
 ```mermaid

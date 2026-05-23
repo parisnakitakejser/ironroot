@@ -1,5 +1,7 @@
 # Trust Distribution
 
+<span class="ironroot-page-status ironroot-page-status--in-progress">Status: In progress</span>
+
 Trust distribution installs the Root CA certificate into systems that need to validate IronRoot-issued certificates. It does not install private keys.
 
 Linux:

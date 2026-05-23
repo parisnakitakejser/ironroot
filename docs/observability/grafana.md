@@ -1,5 +1,7 @@
 # Grafana
 
+<span class="ironroot-page-status ironroot-page-status--in-progress">Status: In progress</span>
+
 Grafana should combine Prometheus metrics, Tempo traces, and Loki logs.
 
 Recommended dashboards:

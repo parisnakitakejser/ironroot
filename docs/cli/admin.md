@@ -1,5 +1,7 @@
 # ironroot-admin
 
+<span class="ironroot-page-status ironroot-page-status--in-progress">Status: In progress</span>
+
 `ironroot-admin` is the trusted operator CLI.
 
 Common commands:

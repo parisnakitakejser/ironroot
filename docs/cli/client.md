@@ -1,5 +1,7 @@
 # ironroot-client
 
+<span class="ironroot-page-status ironroot-page-status--in-progress">Status: In progress</span>
+
 `ironroot-client` enrolls machines, requests certificates, renews certificates, checks status, and downloads trust bundles.
 
 ```bash

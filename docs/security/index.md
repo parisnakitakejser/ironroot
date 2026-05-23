@@ -1,5 +1,7 @@
 # Security Principles
 
+<span class="ironroot-page-status ironroot-page-status--in-progress">Status: In progress</span>
+
 - Keep the Root CA offline.
 - Store the Intermediate CA private key encrypted at rest where possible.
 - Mount CA material from controlled files or encrypted local storage.

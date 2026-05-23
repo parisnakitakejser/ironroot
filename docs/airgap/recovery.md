@@ -1,5 +1,7 @@
 # Airgap Recovery
 
+<span class="ironroot-page-status ironroot-page-status--in-progress">Status: In progress</span>
+
 Recovery depends on what was lost:
 
 - Lost server database: restore the SQLite or PostgreSQL backup.

@@ -1,5 +1,7 @@
 # Prometheus
 
+<span class="ironroot-page-status ironroot-page-status--in-progress">Status: In progress</span>
+
 IronRoot exposes Prometheus metrics at `/metrics` when `telemetry.prometheus.enabled` is true.
 
 Binary scrape example:

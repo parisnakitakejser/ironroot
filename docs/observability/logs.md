@@ -1,5 +1,7 @@
 # Logs
 
+<span class="ironroot-page-status ironroot-page-status--in-progress">Status: In progress</span>
+
 IronRoot uses structured JSON logs. Logs include trace correlation fields when a span is active:
 
 - `timestamp`

@@ -1,0 +1,31 @@
+.ironroot-page-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin: -0.35rem 0 1rem;
+  padding: 0.18rem 0.55rem;
+  border: 1px solid var(--md-default-fg-color--lightest);
+  border-radius: 999px;
+  background: var(--md-code-bg-color);
+  color: var(--md-default-fg-color--light);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.ironroot-page-status::before {
+  width: 0.48rem;
+  height: 0.48rem;
+  border-radius: 999px;
+  background: currentColor;
+  content: "";
+}
+
+.ironroot-page-status--in-progress {
+  color: #b45309;
+}
+
+[data-md-color-scheme="slate"] .ironroot-page-status--in-progress {
+  color: #fbbf24;
+}

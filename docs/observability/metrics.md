@@ -1,5 +1,7 @@
 # Metrics
 
+<span class="ironroot-page-status ironroot-page-status--in-progress">Status: In progress</span>
+
 IronRoot metrics describe PKI operations, API health, security posture, storage latency, and telemetry pipeline health. Metrics are available at `/metrics` when Prometheus export is enabled and can also be exported through OTLP.
 
 ## API Metrics

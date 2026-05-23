@@ -1,5 +1,7 @@
 # Loki
 
+<span class="ironroot-page-status ironroot-page-status--in-progress">Status: In progress</span>
+
 Loki stores structured IronRoot logs. Logs are most useful when indexed by stable deployment labels such as:
 
 - `app=ironroot`

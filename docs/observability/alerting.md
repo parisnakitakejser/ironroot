@@ -1,5 +1,7 @@
 # Alerting
 
+<span class="ironroot-page-status ironroot-page-status--in-progress">Status: In progress</span>
+
 Alerts should focus on operator action. Avoid paging on one-off failures unless they indicate trust compromise or control-plane outage.
 
 Recommended alerts:

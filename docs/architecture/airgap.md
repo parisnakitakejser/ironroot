@@ -1,5 +1,7 @@
 # Airgap-First Architecture
 
+<span class="ironroot-page-status ironroot-page-status--in-progress">Status: In progress</span>
+
 Airgap-first means IronRoot can be installed, operated, observed, and recovered without assuming live Internet access from the target environment.
 
 ## Deployment Flow

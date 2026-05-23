@@ -1,5 +1,7 @@
 # Binary Installation
 
+<span class="ironroot-page-status ironroot-page-status--in-progress">Status: In progress</span>
+
 Binary deployment is the most direct model for operators who want full control over filesystem permissions, service managers, and backups.
 
 Supported release artifacts:

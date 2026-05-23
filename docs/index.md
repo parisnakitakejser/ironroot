@@ -1,5 +1,7 @@
 # IronRoot
 
+<span class="ironroot-page-status ironroot-page-status--in-progress">Status: In progress</span>
+
 **Airgap-first trust infrastructure**
 
 IronRoot is a modern internal PKI platform for offline-root security, online issuing CAs, observable certificate operations, Kubernetes-native deployment, Podman workflows, and self-hosted infrastructure.

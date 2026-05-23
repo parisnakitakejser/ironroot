@@ -1,5 +1,7 @@
 # IronRoot API Server
 
+<span class="ironroot-page-status ironroot-page-status--in-progress">Status: In progress</span>
+
 The API server is the online control plane for enrollment, certificate issuance, renewal, revocation metadata, audit logging, and OpenTelemetry instrumentation.
 
 ## Responsibilities

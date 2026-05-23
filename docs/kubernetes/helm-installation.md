@@ -1,5 +1,7 @@
 # Helm Installation
 
+<span class="ironroot-page-status ironroot-page-status--in-progress">Status: In progress</span>
+
 IronRoot ships a Helm chart under `deploy/helm/ironroot` and publishes release charts as OCI artifacts.
 
 Install an RC chart:

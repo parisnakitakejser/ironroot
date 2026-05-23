@@ -1,5 +1,7 @@
 # Offline Root Handling
 
+<span class="ironroot-page-status ironroot-page-status--in-progress">Status: In progress</span>
+
 The Root CA is the trust anchor. Treat it as offline infrastructure, not an online service dependency.
 
 Recommended posture:

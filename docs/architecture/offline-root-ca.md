@@ -1,5 +1,7 @@
 # Offline Root CA
 
+<span class="ironroot-page-status ironroot-page-status--in-progress">Status: In progress</span>
+
 The Root CA is the trust anchor. It should not be an always-on service. It should ideally live on an offline or air-gapped machine and only be powered on or mounted when signing a new Intermediate CA or performing a planned root migration.
 
 ## Responsibilities

@@ -1,5 +1,7 @@
 # Container Mirroring
 
+<span class="ironroot-page-status ironroot-page-status--in-progress">Status: In progress</span>
+
 Mirror IronRoot and dependency images into an internal registry.
 
 ```bash

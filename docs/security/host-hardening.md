@@ -1,5 +1,7 @@
 # Host Hardening
 
+<span class="ironroot-page-status ironroot-page-status--in-progress">Status: In progress</span>
+
 IronRoot should run on a small, controlled host or Kubernetes workload with clear ownership of config, data, and PKI material.
 
 Recommended host posture:

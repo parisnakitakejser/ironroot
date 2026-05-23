@@ -1,5 +1,7 @@
 # Tempo
 
+<span class="ironroot-page-status ironroot-page-status--in-progress">Status: In progress</span>
+
 Tempo stores traces from IronRoot. Use it to inspect enrollment, certificate request, renewal, revocation, bootstrap, and security-check workflows.
 
 Look for:

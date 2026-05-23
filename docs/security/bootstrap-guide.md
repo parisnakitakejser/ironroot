@@ -1,5 +1,7 @@
 # First-Run Bootstrap Guide
 
+<span class="ironroot-page-status ironroot-page-status--in-progress">Status: In progress</span>
+
 Run the interactive guide before exposing IronRoot to operators or workloads:
 
 ```bash

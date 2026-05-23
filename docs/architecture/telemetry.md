@@ -1,5 +1,7 @@
 # OpenTelemetry Architecture
 
+<span class="ironroot-page-status ironroot-page-status--in-progress">Status: In progress</span>
+
 Observability matters in PKI because certificate operations are security-sensitive operational events. Operators need to answer who enrolled, who requested a certificate, what issuer signed it, whether renewals are succeeding, and whether failures are clustered around a service or environment.
 
 ## Trace Propagation

@@ -1,5 +1,7 @@
 # Traces
 
+<span class="ironroot-page-status ironroot-page-status--in-progress">Status: In progress</span>
+
 IronRoot creates one root span per CLI command and continues that trace through HTTP requests with W3C `traceparent` headers. The server creates spans for request handling and internal PKI operations.
 
 Important spans include:

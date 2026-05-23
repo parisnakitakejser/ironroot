@@ -10,9 +10,11 @@ GOFILES := $(shell find . -name '*.go' -not -path './vendor/*')
 BINARIES := ironroot-server ironroot-admin ironroot-client
 PLATFORMS := linux-amd64 linux-arm64 darwin-amd64 darwin-arm64
 
-.PHONY: build build-linux build-macos build-all install-local run-server smoke-cli dev-init dev-clean fmt fmt-check vet lint test test-e2e docs-install docs-setup docs-serve docs-build docs-deploy-local container-build security-govulncheck helm-lint helm-template helm-package helm-test coverage
+.PHONY: build build-local build-linux build-macos build-all install-local run-server smoke-cli dev-init dev-clean fmt fmt-check vet lint test test-e2e docs-install docs-setup docs-serve docs-build docs-deploy-local container-build security-govulncheck helm-lint helm-template helm-package helm-test coverage
 
-build:
+build: build-local
+
+build-local:
 	$(GO) build -o bin/ironroot-server ./cmd/server
 	$(GO) build -o bin/ironroot-admin ./cmd/ironroot-admin
 	$(GO) build -o bin/ironroot-client ./cmd/ironroot-client
@@ -35,14 +37,14 @@ build-macos:
 
 build-all: build-linux build-macos
 
-install-local: build
+install-local: build-local
 	mkdir -p $(INSTALL_PREFIX)/bin
 	cp bin/ironroot-server bin/ironroot-admin bin/ironroot-client $(INSTALL_PREFIX)/bin/
 
-run-server: build
+run-server: build-local
 	bin/ironroot-server --config .localdev/config/config.yaml
 
-smoke-cli: build
+smoke-cli: build-local
 	bin/ironroot-admin --help >/dev/null
 	bin/ironroot-client --help >/dev/null
 	bin/ironroot-server --version >/dev/null

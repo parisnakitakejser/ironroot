@@ -1,5 +1,7 @@
 # Local Development
 
+<span class="ironroot-page-status ironroot-page-status--in-progress">Status: In progress</span>
+
 This guide is the contributor path for building, installing, running, debugging, patching, and verifying IronRoot from a Git checkout.
 
 ## Prerequisites
@@ -8,7 +10,7 @@ Required:
 
 - Go
 - Git
-- Make
+- `just`
 - SQLite
 
 Optional but recommended:
@@ -18,15 +20,18 @@ Optional but recommended:
 - Python and MkDocs dependencies for docs
 - `golangci-lint` for local linting
 - `govulncheck` for vulnerability checks
+- Make if you need the CI-compatible fallback tasks
 
 Verify tools:
 
 ```bash
 go version
 git --version
-make --version
+just --version
 sqlite3 --version
 ```
+
+`just` is the preferred local task runner. The repository keeps a Makefile as a compatibility layer for CI and contributors who have not installed `just` yet.
 
 ## Clone The Repository
 
@@ -39,10 +44,10 @@ Replace `OWNER` with your GitHub user or organization.
 
 ## Build Binaries Locally
 
-Build all current-platform binaries:
+Use `just build-local` for the fast local development build. It only builds the binaries for your current operating system and CPU architecture.
 
 ```bash
-make build
+just build-local
 ```
 
 Equivalent direct Go commands:
@@ -62,12 +67,14 @@ bin/
   ironroot-client
 ```
 
-Cross-compile release targets:
+`just build` is kept as a compatibility alias for `just build-local`.
+
+Only use cross-compilation when you need to validate release targets:
 
 ```bash
-make build-linux
-make build-macos
-make build-all
+just build-linux
+just build-macos
+just build-all
 ```
 
 ## Install Local Development Binaries
@@ -90,10 +97,10 @@ cp bin/ironroot-client ~/.local/bin/
 export PATH="$HOME/.local/bin:$PATH"
 ```
 
-Or use the Makefile:
+Or use the task runner:
 
 ```bash
-make install-local
+just install-local
 ```
 
 Verify:
@@ -128,7 +135,7 @@ go install ./cmd/ironroot-admin
 go install ./cmd/ironroot-client
 ```
 
-This produces `server`, `ironroot-admin`, and `ironroot-client`. Use `make build` or `make install-local` when you need the server binary named `ironroot-server`.
+This produces `server`, `ironroot-admin`, and `ironroot-client`. Use `just build-local` or `just install-local` when you need the server binary named `ironroot-server`.
 
 ## Local Config And Data Directories
 
@@ -166,7 +173,7 @@ cp examples/config.local.yaml .localdev/config/config.yaml
 Or initialize everything:
 
 ```bash
-make dev-init
+just dev-init
 ```
 
 The local config uses:
@@ -222,7 +229,7 @@ go run ./cmd/server --config .localdev/config/config.yaml
 Or use:
 
 ```bash
-make run-server
+just run-server
 ```
 
 ## Use Admin CLI Locally
@@ -299,12 +306,12 @@ Recommended loop:
 
 ```bash
 git checkout -b fix/my-change
-make fmt
-make test
-make test-e2e
-make lint
-make docs-build
-make build
+just fmt
+just test
+just test-e2e
+just lint
+just docs-build
+just build-local
 ```
 
 Then manually verify the local flow you changed before opening a pull request.
@@ -314,7 +321,7 @@ Then manually verify the local flow you changed before opening a pull request.
 Run all unit tests:
 
 ```bash
-make test
+just test
 go test ./...
 ```
 
@@ -327,7 +334,7 @@ go test ./internal/...
 Run e2e tests:
 
 ```bash
-make test-e2e
+just test-e2e
 ```
 
 Tests live beside internal packages and under `tests/e2e`.
@@ -337,13 +344,13 @@ Tests live beside internal packages and under `tests/e2e`.
 Preview docs:
 
 ```bash
-make docs-serve
+just docs-serve
 ```
 
 Build docs:
 
 ```bash
-make docs-build
+just docs-build
 ```
 
 Docs are built from `main` and published as generated static files to the `website` branch.
@@ -412,11 +419,11 @@ ironroot-server --config .localdev/config/config.yaml
 MkDocs missing dependencies:
 
 ```bash
-make docs-install
+just docs-install
 ```
 
 Clean local state:
 
 ```bash
-make dev-clean
+just dev-clean
 ```

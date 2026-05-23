@@ -1,5 +1,7 @@
 # Quick Start
 
+<span class="ironroot-page-status ironroot-page-status--in-progress">Status: In progress</span>
+
 Build the binaries:
 
 ```bash

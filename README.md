@@ -41,7 +41,7 @@ Homelab servers and Kubernetes services
 ## Quick start
 
 ```bash
-make build
+just build-local
 bin/ironroot-admin ca create-root \
   --name "IronRoot Local Root CA" \
   --password ironroot-local-root \
@@ -71,6 +71,17 @@ For the browser-trusted website walkthrough, including `/etc/hosts`, nginx/Caddy
 IronRoot supports Linux and macOS on amd64 and arm64:
 
 ```bash
+just build-local
+just build-linux
+just build-macos
+just build-all
+just install-local
+```
+
+The Makefile remains available for CI and compatibility, so `make build-local` still works.
+
+```bash
+make build-local
 make build-linux
 make build-macos
 make build-all
@@ -167,17 +178,17 @@ Air-gapped environments should mirror both `ghcr.io/OWNER/ironroot:<version>` an
 Documentation is built with MkDocs Material:
 
 ```bash
-make docs-install
-make docs-serve
-make docs-build
-make docs-deploy-local
+just docs-install
+just docs-serve
+just docs-build
+just docs-deploy-local
 ```
 
 The public documentation website is published from the generated `site/` output to the `website` branch for GitHub Pages. Configure GitHub Pages to serve from branch `website` and folder `/`.
 
 Website: `https://parisnakitakejser.github.io/ironroot/`
 
-Contributors should edit source docs under `docs/`, preview with `make docs-serve`, and run `make docs-build` before opening a pull request. Do not edit the generated `website` branch by hand.
+Contributors should edit source docs under `docs/`, preview with `just docs-serve`, and run `just docs-build` before opening a pull request. Do not edit the generated `website` branch by hand.
 
 ## Project links
 

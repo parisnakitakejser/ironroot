@@ -1,5 +1,7 @@
 # Local Quick Start
 
+<span class="ironroot-page-status ironroot-page-status--in-progress">Status: In progress</span>
+
 This guide creates a complete local IronRoot PKI, issues a website certificate, installs the Root CA trust bundle, and opens a local HTTPS site without browser warnings.
 
 !!! warning "Local demo only"

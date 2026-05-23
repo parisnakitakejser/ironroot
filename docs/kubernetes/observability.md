@@ -1,5 +1,7 @@
 # Kubernetes Observability
 
+<span class="ironroot-page-status ironroot-page-status--in-progress">Status: In progress</span>
+
 IronRoot supports OpenTelemetry Collector integration, Prometheus scraping, and optional ServiceMonitor resources in Kubernetes.
 
 Enable telemetry and ServiceMonitor in Helm values:

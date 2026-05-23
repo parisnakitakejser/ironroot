@@ -1,5 +1,7 @@
 # CLI
 
+<span class="ironroot-page-status ironroot-page-status--in-progress">Status: In progress</span>
+
 IronRoot ships three command surfaces:
 
 - `ironroot-server`

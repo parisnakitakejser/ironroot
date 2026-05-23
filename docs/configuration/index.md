@@ -1,5 +1,7 @@
 # Configuration
 
+<span class="ironroot-page-status ironroot-page-status--in-progress">Status: In progress</span>
+
 IronRoot reads YAML config and environment variables. The default path is `configs/server.yaml`; containers use `/config/config.yaml`.
 
 Important settings:

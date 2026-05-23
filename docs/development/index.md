@@ -1,5 +1,7 @@
 # Local Development
 
+<span class="ironroot-page-status ironroot-page-status--in-progress">Status: In progress</span>
+
 IronRoot supports development on Linux and macOS.
 
 Supported local and release targets:
@@ -16,7 +18,7 @@ Windows support is planned, but not supported in the MVP.
 Install Go, Git, SQLite development libraries if your distribution requires them for CGO, and either Podman or Docker.
 
 ```bash
-make build
+make build-local
 make test
 make build-linux
 ```
@@ -41,7 +43,7 @@ source ~/.zshrc
 Install Go and Git. Homebrew is optional but useful for `podman`, `docker`, `sqlite`, and documentation tooling.
 
 ```bash
-make build
+make build-local
 make test
 make build-macos
 ```

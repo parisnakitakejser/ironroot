@@ -1,5 +1,7 @@
 # Certificate Lifecycle
 
+<span class="ironroot-page-status ironroot-page-status--in-progress">Status: In progress</span>
+
 Certificates move through enrollment, issuance, renewal, status checks, and revocation.
 
 ```mermaid

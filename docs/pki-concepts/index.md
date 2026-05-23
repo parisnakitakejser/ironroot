@@ -1,5 +1,7 @@
 # PKI Concepts
 
+<span class="ironroot-page-status ironroot-page-status--in-progress">Status: In progress</span>
+
 ## Offline Root CA
 
 The Root CA is the long-lived trust anchor. IronRoot recommends a 20 year Root CA lifetime and keeping the root private key offline.

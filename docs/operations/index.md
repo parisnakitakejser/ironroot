@@ -1,5 +1,7 @@
 # Operations
 
+<span class="ironroot-page-status ironroot-page-status--in-progress">Status: In progress</span>
+
 Operating IronRoot safely means treating it as trust infrastructure, not just another internal API.
 
 ## Operational Responsibilities
