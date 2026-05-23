@@ -1,0 +1,25 @@
+server:
+  address: "localhost:8443"
+  tls:
+    cert_file: ""
+    key_file: ""
+database:
+  driver: sqlite
+  dsn: "file:.localdev/data/ironroot.db?_foreign_keys=on"
+pki:
+  root_file: ".localdev/pki/root/root-ca.crt"
+  chain_file: ".localdev/pki/intermediate/ca-chain.crt"
+  intermediate_cert_file: ".localdev/pki/intermediate/intermediate-ca.crt"
+  intermediate_key_file: ".localdev/pki/intermediate/intermediate-ca.key"
+  intermediate_key_pass: "ironroot-local-intermediate"
+  default_lifetime: 2160h
+  renew_before: 720h
+telemetry:
+  enabled: false
+  service_name: ironroot-local
+  deployment_environment: local
+  prometheus:
+    enabled: true
+    path: /metrics
+log:
+  level: info

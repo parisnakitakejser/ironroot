@@ -66,6 +66,24 @@ bin/ironroot-client request-cert --server http://localhost:8443 --enrollment-id 
 
 For the browser-trusted website walkthrough, including `/etc/hosts`, nginx/Caddy/Python examples, and OS/browser trust-store installation, follow [docs/getting-started/local-quickstart.md](docs/getting-started/local-quickstart.md).
 
+## Cross-platform Binaries
+
+IronRoot supports Linux and macOS on amd64 and arm64:
+
+```bash
+make build-linux
+make build-macos
+make build-all
+make install-local
+```
+
+Release artifacts are packaged as:
+
+- `ironroot-linux-amd64.tar.gz`
+- `ironroot-linux-arm64.tar.gz`
+- `ironroot-darwin-amd64.tar.gz`
+- `ironroot-darwin-arm64.tar.gz`
+
 ## First-time security bootstrap
 
 Before exposing IronRoot, run the bootstrap guide and security check:

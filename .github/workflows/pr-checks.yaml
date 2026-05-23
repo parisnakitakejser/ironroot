@@ -42,6 +42,12 @@ jobs:
       - name: Security check smoke test
         run: go run ./cmd/ironroot-admin security-check --config ./examples/config.dev.yaml --output json --fail-on critical
 
+      - name: Cross-platform build validation
+        run: make build-all
+
+      - name: CLI startup smoke test
+        run: make smoke-cli
+
   docs:
     name: Documentation build
     runs-on: ubuntu-latest

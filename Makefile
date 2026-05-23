@@ -2,17 +2,57 @@ GO ?= go
 IMAGE ?= localhost/ironroot:dev
 CONTAINERFILE ?= Containerfile
 HELM_CHART ?= deploy/helm/ironroot
+INSTALL_PREFIX ?= $(HOME)/.local
 DOCS_PYTHON ?= /usr/bin/python3
 DOCS_VENV ?= .venv-docs
 MKDOCS ?= $(DOCS_VENV)/bin/mkdocs
 GOFILES := $(shell find . -name '*.go' -not -path './vendor/*')
+BINARIES := ironroot-server ironroot-admin ironroot-client
+PLATFORMS := linux-amd64 linux-arm64 darwin-amd64 darwin-arm64
 
-.PHONY: build fmt fmt-check vet lint test test-e2e docs-install docs-setup docs-serve docs-build docs-deploy-local container-build security-govulncheck helm-lint helm-template helm-package helm-test coverage
+.PHONY: build build-linux build-macos build-all install-local run-server smoke-cli dev-init dev-clean fmt fmt-check vet lint test test-e2e docs-install docs-setup docs-serve docs-build docs-deploy-local container-build security-govulncheck helm-lint helm-template helm-package helm-test coverage
 
 build:
 	$(GO) build -o bin/ironroot-server ./cmd/server
 	$(GO) build -o bin/ironroot-admin ./cmd/ironroot-admin
 	$(GO) build -o bin/ironroot-client ./cmd/ironroot-client
+
+build-linux:
+	GOOS=linux GOARCH=amd64 $(GO) build -o dist/linux-amd64/ironroot-server ./cmd/server
+	GOOS=linux GOARCH=amd64 $(GO) build -o dist/linux-amd64/ironroot-admin ./cmd/ironroot-admin
+	GOOS=linux GOARCH=amd64 $(GO) build -o dist/linux-amd64/ironroot-client ./cmd/ironroot-client
+	GOOS=linux GOARCH=arm64 $(GO) build -o dist/linux-arm64/ironroot-server ./cmd/server
+	GOOS=linux GOARCH=arm64 $(GO) build -o dist/linux-arm64/ironroot-admin ./cmd/ironroot-admin
+	GOOS=linux GOARCH=arm64 $(GO) build -o dist/linux-arm64/ironroot-client ./cmd/ironroot-client
+
+build-macos:
+	GOOS=darwin GOARCH=amd64 $(GO) build -o dist/darwin-amd64/ironroot-server ./cmd/server
+	GOOS=darwin GOARCH=amd64 $(GO) build -o dist/darwin-amd64/ironroot-admin ./cmd/ironroot-admin
+	GOOS=darwin GOARCH=amd64 $(GO) build -o dist/darwin-amd64/ironroot-client ./cmd/ironroot-client
+	GOOS=darwin GOARCH=arm64 $(GO) build -o dist/darwin-arm64/ironroot-server ./cmd/server
+	GOOS=darwin GOARCH=arm64 $(GO) build -o dist/darwin-arm64/ironroot-admin ./cmd/ironroot-admin
+	GOOS=darwin GOARCH=arm64 $(GO) build -o dist/darwin-arm64/ironroot-client ./cmd/ironroot-client
+
+build-all: build-linux build-macos
+
+install-local: build
+	mkdir -p $(INSTALL_PREFIX)/bin
+	cp bin/ironroot-server bin/ironroot-admin bin/ironroot-client $(INSTALL_PREFIX)/bin/
+
+run-server: build
+	bin/ironroot-server --config .localdev/config/config.yaml
+
+smoke-cli: build
+	bin/ironroot-admin --help >/dev/null
+	bin/ironroot-client --help >/dev/null
+	bin/ironroot-server --version >/dev/null
+
+dev-init:
+	mkdir -p .localdev/config .localdev/data .localdev/pki .localdev/certs .localdev/logs
+	cp examples/config.local.yaml .localdev/config/config.yaml
+
+dev-clean:
+	rm -rf .localdev
 
 fmt:
 	gofmt -w $(GOFILES)

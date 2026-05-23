@@ -69,6 +69,20 @@ jobs:
       - name: End-to-end tests
         run: make test-e2e
 
+      - name: Build release binaries
+        run: make build-all
+
+      - name: Package release binaries
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p dist/releases
+          for platform in linux-amd64 linux-arm64 darwin-amd64 darwin-arm64; do
+            tar -C "dist/${platform}" -czf "dist/releases/ironroot-${platform}.tar.gz" \
+              ironroot-server ironroot-admin ironroot-client
+          done
+          (cd dist/releases && sha256sum *.tar.gz > checksums.txt)
+
       - name: Docker login to GHCR
         uses: docker/login-action@v3
         with:
@@ -127,5 +141,15 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           prerelease: ${{ steps.meta.outputs.prerelease }}
-          files: dist/charts/ironroot-${{ steps.meta.outputs.chart_version }}.tgz
+          body: |
+            IronRoot release ${{ steps.meta.outputs.app_tag }}.
+
+            Artifacts include Linux and macOS binaries for amd64 and arm64, plus the Helm chart package.
+          files: |
+            dist/charts/ironroot-${{ steps.meta.outputs.chart_version }}.tgz
+            dist/releases/ironroot-linux-amd64.tar.gz
+            dist/releases/ironroot-linux-arm64.tar.gz
+            dist/releases/ironroot-darwin-amd64.tar.gz
+            dist/releases/ironroot-darwin-arm64.tar.gz
+            dist/releases/checksums.txt
           generate_release_notes: true
