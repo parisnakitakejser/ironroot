@@ -29,7 +29,7 @@ func TestDevInitWorksOutsideCheckout(t *testing.T) {
 	base := realTempDir(t)
 	var out bytes.Buffer
 
-	if err := RunDevInit(t.Context(), DevInitOptions{Repo: base, Output: ".localdev", Stdout: &out}); err != nil {
+	if err := RunDevInit(t.Context(), DevInitOptions{BaseDir: base, Output: ".localdev", Stdout: &out}); err != nil {
 		t.Fatalf("RunDevInit failed outside checkout: %v", err)
 	}
 	if _, err := os.Stat(filepath.Join(base, ".localdev", "config", "config.yaml")); err != nil {
@@ -44,7 +44,7 @@ func TestDevInitCreatesWorkspaceAndGeneratedConfig(t *testing.T) {
 	base := realTempDir(t)
 	var out bytes.Buffer
 
-	err := RunDevInit(t.Context(), DevInitOptions{Repo: base, Output: ".localdev", Stdout: &out})
+	err := RunDevInit(t.Context(), DevInitOptions{BaseDir: base, Output: ".localdev", Stdout: &out})
 	if err != nil {
 		t.Fatalf("RunDevInit failed: %v", err)
 	}
@@ -73,7 +73,7 @@ func TestDevInitCreatesWorkspaceAndGeneratedConfig(t *testing.T) {
 
 func TestDevInitIsIdempotentAndDoesNotOverwriteWithoutForce(t *testing.T) {
 	base := realTempDir(t)
-	if err := RunDevInit(t.Context(), DevInitOptions{Repo: base, Output: ".localdev", Stdout: &bytes.Buffer{}}); err != nil {
+	if err := RunDevInit(t.Context(), DevInitOptions{BaseDir: base, Output: ".localdev", Stdout: &bytes.Buffer{}}); err != nil {
 		t.Fatal(err)
 	}
 	configPath := filepath.Join(base, ".localdev", "config", "config.yaml")
@@ -82,7 +82,7 @@ func TestDevInitIsIdempotentAndDoesNotOverwriteWithoutForce(t *testing.T) {
 	}
 
 	var out bytes.Buffer
-	if err := RunDevInit(t.Context(), DevInitOptions{Repo: base, Output: ".localdev", Stdout: &out}); err != nil {
+	if err := RunDevInit(t.Context(), DevInitOptions{BaseDir: base, Output: ".localdev", Stdout: &out}); err != nil {
 		t.Fatal(err)
 	}
 	config, err := os.ReadFile(configPath)
@@ -96,7 +96,7 @@ func TestDevInitIsIdempotentAndDoesNotOverwriteWithoutForce(t *testing.T) {
 		t.Fatalf("expected skipped files output, got: %s", out.String())
 	}
 
-	if err := RunDevInit(t.Context(), DevInitOptions{Repo: base, Output: ".localdev", Force: true, Stdout: &bytes.Buffer{}}); err != nil {
+	if err := RunDevInit(t.Context(), DevInitOptions{BaseDir: base, Output: ".localdev", Force: true, Stdout: &bytes.Buffer{}}); err != nil {
 		t.Fatal(err)
 	}
 	config, err = os.ReadFile(configPath)
@@ -112,7 +112,7 @@ func TestDevInitDryRunDoesNotWrite(t *testing.T) {
 	base := realTempDir(t)
 	var out bytes.Buffer
 
-	if err := RunDevInit(t.Context(), DevInitOptions{Repo: base, Output: ".localdev", DryRun: true, Stdout: &out}); err != nil {
+	if err := RunDevInit(t.Context(), DevInitOptions{BaseDir: base, Output: ".localdev", DryRun: true, Stdout: &out}); err != nil {
 		t.Fatal(err)
 	}
 	if _, err := os.Stat(filepath.Join(base, ".localdev")); !os.IsNotExist(err) {
@@ -131,8 +131,8 @@ func TestDevInitExplicitBaseDirectory(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if err := RunDevInit(t.Context(), DevInitOptions{Repo: base, Output: ".localdev", Stdout: &bytes.Buffer{}}); err != nil {
-		t.Fatalf("RunDevInit with --repo failed: %v", err)
+	if err := RunDevInit(t.Context(), DevInitOptions{BaseDir: base, Output: ".localdev", Stdout: &bytes.Buffer{}}); err != nil {
+		t.Fatalf("RunDevInit with --base-dir failed: %v", err)
 	}
 	if _, err := os.Stat(filepath.Join(base, ".localdev", "config", "config.yaml")); err != nil {
 		t.Fatalf("missing generated config: %v", err)

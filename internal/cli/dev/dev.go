@@ -23,7 +23,7 @@ func devInitCommand() *cobra.Command {
 		Long: "Initialize a neutral .localdev workspace for local IronRoot contributor workflows. " +
 			"The command is self-contained, creates local data directories, and generates config from a template compiled into ironroot-dev.",
 		Example: `  ironroot-dev dev-init
-  ironroot-dev dev-init --repo /path/to/workspace
+  ironroot-dev dev-init --base-dir /path/to/workspace
   ironroot-dev dev-init --output .localdev --dry-run
   ironroot-dev dev-init --force --verbose`,
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -32,10 +32,12 @@ func devInitCommand() *cobra.Command {
 			return RunDevInit(cmd.Context(), opts)
 		},
 	}
-	cmd.Flags().StringVar(&opts.Repo, "repo", "", "base directory for the local workspace; defaults to the current directory")
+	cmd.Flags().StringVar(&opts.BaseDir, "base-dir", "", "base directory for the local workspace; defaults to the current directory")
+	cmd.Flags().StringVar(&opts.BaseDir, "repo", "", "deprecated alias for --base-dir")
 	cmd.Flags().StringVar(&opts.Output, "output", ".localdev", "local development workspace path; relative paths are resolved inside the base directory")
 	cmd.Flags().BoolVar(&opts.Force, "force", false, "overwrite generated config and helper files if they already exist")
 	cmd.Flags().BoolVar(&opts.DryRun, "dry-run", false, "print actions without creating or modifying files")
 	cmd.Flags().BoolVar(&opts.Verbose, "verbose", false, "print detailed path and file actions")
+	_ = cmd.Flags().MarkHidden("repo")
 	return cmd
 }

@@ -10,7 +10,7 @@ import (
 )
 
 type DevInitOptions struct {
-	Repo    string
+	BaseDir string
 	Output  string
 	Force   bool
 	DryRun  bool
@@ -39,7 +39,7 @@ func RunDevInit(ctx context.Context, opts DevInitOptions) error {
 		opts.Output = ".localdev"
 	}
 
-	baseDir, err := resolveBaseDir(opts.Repo)
+	baseDir, err := resolveBaseDir(opts.BaseDir)
 	if err != nil {
 		return err
 	}
@@ -91,11 +91,11 @@ func RunDevInit(ctx context.Context, opts DevInitOptions) error {
 	return nil
 }
 
-func resolveBaseDir(repo string) (string, error) {
-	if strings.TrimSpace(repo) != "" {
-		abs, err := filepath.Abs(repo)
+func resolveBaseDir(baseDir string) (string, error) {
+	if strings.TrimSpace(baseDir) != "" {
+		abs, err := filepath.Abs(baseDir)
 		if err != nil {
-			return "", fmt.Errorf("failed to resolve --repo path: %w", err)
+			return "", fmt.Errorf("failed to resolve --base-dir path: %w", err)
 		}
 		return abs, nil
 	}

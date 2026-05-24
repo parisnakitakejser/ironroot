@@ -51,7 +51,7 @@ ironroot-dev dev-init
 Create the workspace under another base directory:
 
 ```bash
-ironroot-dev dev-init --repo /path/to/workspace
+ironroot-dev dev-init --base-dir /path/to/workspace
 ```
 
 Preview actions without writing files:
@@ -70,7 +70,7 @@ ironroot-dev dev-init --force
 
 | Flag | Default | Description |
 |---|---|---|
-| `--repo` | current directory | Base directory for the local workspace. This does not need to be a Git checkout. |
+| `--base-dir` | current directory | Base directory for the local workspace. This does not need to be a Git checkout. |
 | `--output` | `.localdev` | Workspace path. Relative paths are resolved inside the base directory. |
 | `--force` | `false` | Overwrite generated `config.yaml`, `.gitignore`, and `README.txt` if they already exist. |
 | `--dry-run` | `false` | Print actions without creating directories or writing files. |

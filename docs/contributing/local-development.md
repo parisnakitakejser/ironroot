@@ -145,20 +145,13 @@ Prepare the local workspace with:
 ironroot-dev dev-init
 ```
 
-`ironroot-dev dev-init` is self-contained. It does not need to read files from the IronRoot checkout at runtime. By default it creates `.localdev` under the directory where you run it. To target another base directory, pass `--repo`:
+`ironroot-dev dev-init` is self-contained. It does not need to read files from the IronRoot checkout at runtime. By default it creates `.localdev` under the directory where you run it. To target another base directory, pass `--base-dir`:
 
 ```bash
-ironroot-dev dev-init --repo /path/to/workspace
+ironroot-dev dev-init --base-dir /path/to/workspace
 ```
 
-Useful options:
-
-```bash
-ironroot-dev dev-init --dry-run
-ironroot-dev dev-init --verbose
-ironroot-dev dev-init --force
-ironroot-dev dev-init --output .localdev
-```
+For the complete `ironroot-dev` command reference, including `--dry-run`, `--verbose`, `--force`, and output path options, see [ironroot-dev](../api-cli/ironroot-dev.md).
 
 The command creates a neutral local development workspace under the selected base directory. It does not create a demo DNS name or host-specific certificate directory. Those are created later when you enroll a client and request a certificate for a specific name.
 
