@@ -10,7 +10,7 @@ IronRoot ships a Helm chart under `deploy/helm/ironroot` and publishes release c
 Install an RC chart:
 
 ```bash
-helm install ironroot oci://ghcr.io/OWNER/charts/ironroot \
+helm install ironroot oci://ghcr.io/parisnakitakejser/charts/ironroot \
   --version 0.1.0-rc.1 \
   --namespace ironroot \
   --create-namespace \
@@ -21,7 +21,7 @@ helm install ironroot oci://ghcr.io/OWNER/charts/ironroot \
 Install a stable chart:
 
 ```bash
-helm install ironroot oci://ghcr.io/OWNER/charts/ironroot \
+helm install ironroot oci://ghcr.io/parisnakitakejser/charts/ironroot \
   --version 0.1.0 \
   --namespace ironroot \
   --create-namespace
@@ -30,9 +30,9 @@ helm install ironroot oci://ghcr.io/OWNER/charts/ironroot \
 Local chart testing:
 
 ```bash
-make helm-lint
-make helm-template
-make helm-test
+just helm-lint
+just helm-template
+just helm-test
 ```
 
 The chart expects CA material from a Kubernetes Secret. Never include the offline Root CA private key.

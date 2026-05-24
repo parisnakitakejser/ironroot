@@ -5,7 +5,7 @@ This chart deploys `ironroot-server` into Kubernetes with secure defaults for in
 ## Install
 
 ```bash
-helm install ironroot oci://ghcr.io/OWNER/charts/ironroot \
+helm install ironroot oci://ghcr.io/parisnakitakejser/charts/ironroot \
   --version 0.1.0-rc.1 \
   --namespace ironroot \
   --create-namespace \
@@ -16,7 +16,7 @@ helm install ironroot oci://ghcr.io/OWNER/charts/ironroot \
 ## Upgrade
 
 ```bash
-helm upgrade ironroot oci://ghcr.io/OWNER/charts/ironroot \
+helm upgrade ironroot oci://ghcr.io/parisnakitakejser/charts/ironroot \
   --version 0.1.0 \
   --namespace ironroot \
   -f values.yaml
@@ -32,7 +32,7 @@ helm uninstall ironroot --namespace ironroot
 
 | Value | Default | Description |
 | --- | --- | --- |
-| `image.repository` | `ghcr.io/OWNER/ironroot` | Container image repository |
+| `image.repository` | `ghcr.io/parisnakitakejser/ironroot` | Container image repository |
 | `image.tag` | `""` | Image tag, defaults to chart `appVersion` |
 | `image.pullPolicy` | `IfNotPresent` | Image pull policy |
 | `replicaCount` | `1` | Number of server replicas |
@@ -119,7 +119,7 @@ Never put the offline Root CA private key in this Secret.
 Mirror both the image and the chart:
 
 ```bash
-skopeo copy docker://ghcr.io/OWNER/ironroot:v0.1.0-rc.1 docker://registry.internal/ironroot:v0.1.0-rc.1
-helm pull oci://ghcr.io/OWNER/charts/ironroot --version 0.1.0-rc.1
+skopeo copy docker://ghcr.io/parisnakitakejser/ironroot:v0.1.0-rc.1 docker://registry.internal/ironroot:v0.1.0-rc.1
+helm pull oci://ghcr.io/parisnakitakejser/charts/ironroot --version 0.1.0-rc.1
 helm push ironroot-0.1.0-rc.1.tgz oci://registry.internal/charts
 ```

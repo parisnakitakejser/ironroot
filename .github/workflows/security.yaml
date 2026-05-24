@@ -23,11 +23,14 @@ jobs:
           go-version-file: go.mod
           cache: true
 
+      - name: Set up just
+        uses: extractions/setup-just@v3
+
       - name: Install govulncheck
         run: go install golang.org/x/vuln/cmd/govulncheck@latest
 
       - name: Run govulncheck
-        run: make security-govulncheck
+        run: just security-govulncheck
 
   dependency-review:
     name: Dependency review
@@ -66,8 +69,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Set up just
+        uses: extractions/setup-just@v3
+
       - name: Build local image for scanning
-        run: make container-build IMAGE=ironroot:security
+        run: IMAGE=ironroot:security just container-build
 
       - name: Run Trivy image scan
         uses: aquasecurity/trivy-action@v0.36.0

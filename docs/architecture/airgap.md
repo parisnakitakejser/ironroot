@@ -23,8 +23,8 @@ flowchart TD
 
 ```mermaid
 flowchart LR
-  GHCRImage[ghcr.io/OWNER/ironroot] --> InternalImage[internal registry image]
-  GHCRChart[ghcr.io/OWNER/charts/ironroot] --> InternalChart[internal chart registry]
+  GHCRImage[ghcr.io/parisnakitakejser/ironroot] --> InternalImage[internal registry image]
+  GHCRChart[ghcr.io/parisnakitakejser/charts/ironroot] --> InternalChart[internal chart registry]
   ReleaseTGZ[GitHub Release chart tgz] --> OfflineMedia[offline media]
 ```
 

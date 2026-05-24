@@ -59,13 +59,13 @@ xattr -d com.apple.quarantine ~/.local/bin/ironroot-server
 Build current-platform binaries:
 
 ```bash
-make build
+just build
 ```
 
 Build all supported release targets:
 
 ```bash
-make build-all
+just build-all
 ```
 
 Output layout:

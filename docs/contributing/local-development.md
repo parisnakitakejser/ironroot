@@ -1,11 +1,11 @@
 # Local Development
 
 <div class="ironroot-doc-meta" markdown>
-<span class="ironroot-badge ironroot-badge--stage">Stage: Alpha</span>
-<span class="ironroot-badge ironroot-badge--status ironroot-badge--in-progress">Status: In Progress</span>
+  <span class="ironroot-badge ironroot-badge--stage">Stage: Alpha</span>
+  <span class="ironroot-badge ironroot-badge--status ironroot-badge--in-progress">Status: In Progress</span>
 </div>
 
-This guide is the contributor path for building, installing, running, debugging, patching, and verifying IronRoot from a Git checkout.
+This guide walks contributors through building, installing, running, debugging, patching, and verifying IronRoot directly from a local Git checkout. It is designed to help you easily test and validate the complete development workflow locally before committing your changes.
 
 ## Prerequisites
 
@@ -23,7 +23,6 @@ Optional but recommended:
 - Python and MkDocs dependencies for docs
 - `golangci-lint` for local linting
 - `govulncheck` for vulnerability checks
-- Make if you need the CI-compatible fallback tasks
 
 Verify tools:
 
@@ -34,16 +33,16 @@ just --version
 sqlite3 --version
 ```
 
-`just` is the preferred local task runner. The repository keeps a Makefile as a compatibility layer for CI and contributors who have not installed `just` yet.
+`just` is the project task runner for build, test, docs, container, and Helm workflows.
 
 ## Clone The Repository
 
 ```bash
-git clone https://github.com/OWNER/ironroot.git
+git clone https://github.com/parisnakitakejser/ironroot.git
 cd ironroot
 ```
 
-Replace `OWNER` with your GitHub user or organization.
+This is the upstream IronRoot repository. Fork it first if you are contributing from your own GitHub account.
 
 ## Build Binaries Locally
 
@@ -59,6 +58,7 @@ Equivalent direct Go commands:
 go build -o bin/ironroot-server ./cmd/server
 go build -o bin/ironroot-admin ./cmd/ironroot-admin
 go build -o bin/ironroot-client ./cmd/ironroot-client
+go build -o bin/ironroot-dev ./cmd/ironroot-dev
 ```
 
 Expected output:
@@ -68,6 +68,7 @@ bin/
   ironroot-server
   ironroot-admin
   ironroot-client
+  ironroot-dev
 ```
 
 `just build` is kept as a compatibility alias for `just build-local`.
@@ -88,6 +89,7 @@ Option A: run from `./bin`:
 ./bin/ironroot-server --version
 ./bin/ironroot-admin --help
 ./bin/ironroot-client --help
+./bin/ironroot-dev --help
 ```
 
 Option B: install into your user PATH:
@@ -97,6 +99,7 @@ mkdir -p ~/.local/bin
 cp bin/ironroot-server ~/.local/bin/
 cp bin/ironroot-admin ~/.local/bin/
 cp bin/ironroot-client ~/.local/bin/
+cp bin/ironroot-dev ~/.local/bin/
 export PATH="$HOME/.local/bin:$PATH"
 ```
 
@@ -114,6 +117,8 @@ Verify:
 ironroot-server --version
 ironroot-admin --help
 ironroot-client --help
+ironroot-dev --help
+ironroot-dev dev-init --help
 ```
 
 Linux bash PATH:
@@ -130,64 +135,95 @@ echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.zshrc
 source ~/.zshrc
 ```
 
-## Go Install Workflow
-
-`go install` installs binaries named after the command directories. IronRoot uses:
-
-```bash
-go install ./cmd/server
-go install ./cmd/ironroot-admin
-go install ./cmd/ironroot-client
-```
-
-This produces `server`, `ironroot-admin`, and `ironroot-client`. Use `just build-local` or `just install-local` when you need the server binary named `ironroot-server`.
-
 ## Local Config And Data Directories
 
-Recommended local tree:
+`ironroot-dev` is a contributor-only helper CLI. It is installed by `just install-local` and is not required in production. It exists to keep local developer workflows versioned, testable, and easier to extend than shell-only task runner logic.
+
+Prepare the local workspace with:
+
+```bash
+ironroot-dev dev-init
+```
+
+`ironroot-dev dev-init` is self-contained. It does not need to read files from the IronRoot checkout at runtime. By default it creates `.localdev` under the directory where you run it. To target another base directory, pass `--repo`:
+
+```bash
+ironroot-dev dev-init --repo /path/to/workspace
+```
+
+Useful options:
+
+```bash
+ironroot-dev dev-init --dry-run
+ironroot-dev dev-init --verbose
+ironroot-dev dev-init --force
+ironroot-dev dev-init --output .localdev
+```
+
+The command creates a neutral local development workspace under the selected base directory. It does not create a demo DNS name or host-specific certificate directory. Those are created later when you enroll a client and request a certificate for a specific name.
+
+Generated local tree:
 
 ```text
 .localdev/
   config/
   data/
   pki/
+    root/
+    intermediate/
   certs/
   logs/
-```
-
-Create it:
-
-```bash
-mkdir -p .localdev/config .localdev/data .localdev/pki .localdev/certs .localdev/logs
+  tmp/
+  .gitignore
+  README.txt
 ```
 
 Meaning:
 
-- `.localdev/config`: local config files.
+- `.localdev/config`: generated local config files.
 - `.localdev/data`: SQLite database.
-- `.localdev/pki`: Root and Intermediate CA material for local testing.
-- `.localdev/certs`: issued test certificates.
+- `.localdev/pki/root`: local Root CA material created by `ironroot-admin`.
+- `.localdev/pki/intermediate`: local Intermediate CA material created by `ironroot-admin`.
+- `.localdev/certs`: issued test certificates; DNS-specific directories are created later by `ironroot-client request-cert`.
 - `.localdev/logs`: optional redirected logs; IronRoot logs to stdout by default.
+- `.localdev/tmp`: temporary local development files.
+- `.localdev/.gitignore`: keeps generated keys, certs, tokens, and databases out of Git.
 
 ## Create Local Development Config
 
-```bash
-cp examples/config.local.yaml .localdev/config/config.yaml
+`ironroot-dev dev-init` generates:
+
+```text
+.localdev/config/config.yaml
 ```
 
-Or initialize everything:
+The file is generated from a local config template compiled into the `ironroot-dev` binary:
 
-```bash
-just dev-init
+```text
+ironroot-dev
 ```
 
-The local config uses:
+During generation, IronRoot writes SQLite and PKI paths as absolute paths under the selected base directory. This makes the generated config usable even if you later run `ironroot-server`, `ironroot-admin`, or `ironroot-client` from another directory.
 
-- SQLite at `.localdev/data/ironroot.db`.
-- PKI material under `.localdev/pki`.
+The generated local config uses:
+
+- SQLite at `<base>/.localdev/data/ironroot.db`.
+- PKI material under `<base>/.localdev/pki`.
 - API listen address `localhost:8443`.
 - Telemetry disabled by default.
 - JSON logs to stdout.
+
+If you run commands from the workspace base directory, this is enough:
+
+```bash
+ironroot-server --config .localdev/config/config.yaml
+```
+
+If you run commands from somewhere else on the machine, pass the generated absolute config path printed by `ironroot-dev dev-init`:
+
+```bash
+ironroot-server --config /path/to/workspace/.localdev/config/config.yaml
+```
 
 ## Local PKI Bootstrap Flow
 

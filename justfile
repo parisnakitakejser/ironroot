@@ -8,6 +8,7 @@ install_prefix := env_var_or_default("INSTALL_PREFIX", env_var("HOME") + "/.loca
 docs_python := env_var_or_default("DOCS_PYTHON", "/usr/bin/python3")
 docs_venv := env_var_or_default("DOCS_VENV", ".venv-docs")
 mkdocs := docs_venv + "/bin/mkdocs"
+repo_root := justfile_directory()
 
 # List available recipes.
 default:
@@ -18,9 +19,10 @@ build: build-local
 
 # Build current-platform binaries for local development.
 build-local:
-    {{go}} build -o bin/ironroot-server ./cmd/server
-    {{go}} build -o bin/ironroot-admin ./cmd/ironroot-admin
-    {{go}} build -o bin/ironroot-client ./cmd/ironroot-client
+    {{go}} build -o "{{repo_root}}/bin/ironroot-server" "{{repo_root}}/cmd/server"
+    {{go}} build -o "{{repo_root}}/bin/ironroot-admin" "{{repo_root}}/cmd/ironroot-admin"
+    {{go}} build -o "{{repo_root}}/bin/ironroot-client" "{{repo_root}}/cmd/ironroot-client"
+    {{go}} build -o "{{repo_root}}/bin/ironroot-dev" "{{repo_root}}/cmd/ironroot-dev"
 
 # Build Linux amd64 and arm64 binaries.
 build-linux:
@@ -46,8 +48,8 @@ build-all: build-linux build-macos
 # Install current-platform binaries into INSTALL_PREFIX/bin.
 install-local: build-local
     @echo "Installing freshly built binaries from ./bin into {{install_prefix}}/bin"
-    mkdir -p {{install_prefix}}/bin
-    cp bin/ironroot-server bin/ironroot-admin bin/ironroot-client {{install_prefix}}/bin/
+    mkdir -p "{{install_prefix}}/bin"
+    cp "{{repo_root}}/bin/ironroot-server" "{{repo_root}}/bin/ironroot-admin" "{{repo_root}}/bin/ironroot-client" "{{repo_root}}/bin/ironroot-dev" "{{install_prefix}}/bin/"
 
 # Run the local server using .localdev config.
 run-server: build-local
@@ -55,18 +57,14 @@ run-server: build-local
 
 # Smoke-test CLI startup.
 smoke-cli: build-local
-    bin/ironroot-admin --help >/dev/null
-    bin/ironroot-client --help >/dev/null
-    bin/ironroot-server --version >/dev/null
-
-# Create local development directories and config.
-dev-init:
-    mkdir -p .localdev/config .localdev/data .localdev/pki .localdev/certs .localdev/logs
-    cp examples/config.local.yaml .localdev/config/config.yaml
+    "{{repo_root}}/bin/ironroot-admin" --help >/dev/null
+    "{{repo_root}}/bin/ironroot-client" --help >/dev/null
+    "{{repo_root}}/bin/ironroot-dev" --help >/dev/null
+    "{{repo_root}}/bin/ironroot-server" --version >/dev/null
 
 # Remove local development state.
 dev-clean:
-    rm -rf .localdev
+    rm -rf "{{repo_root}}/.localdev"
 
 # Format Go files.
 fmt:

@@ -5,4 +5,4 @@
 <span class="ironroot-badge ironroot-badge--status">Status: Draft</span>
 </div>
 
-Use `make helm-lint`, `make helm-template`, `make helm-package`, and `make helm-test` when changing the chart. Keep security defaults enabled and avoid embedding real secrets in values.
+Use `just helm-lint`, `just helm-template`, `just helm-package`, and `just helm-test` when changing the chart. Keep security defaults enabled and avoid embedding real secrets in values.

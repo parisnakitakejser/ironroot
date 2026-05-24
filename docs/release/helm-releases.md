@@ -9,16 +9,16 @@ Release tags publish both a container image and Helm chart.
 
 RC tag behavior for `v0.1.0-rc.1`:
 
-- pushes `ghcr.io/OWNER/ironroot:v0.1.0-rc.1`
+- pushes `ghcr.io/parisnakitakejser/ironroot:v0.1.0-rc.1`
 - packages chart version `0.1.0-rc.1`
 - sets chart `appVersion` to `v0.1.0-rc.1`
-- pushes `oci://ghcr.io/OWNER/charts/ironroot`
+- pushes `oci://ghcr.io/parisnakitakejser/charts/ironroot`
 - uploads the chart `.tgz` to a prerelease GitHub Release
 
 Stable tag behavior for `v0.1.0`:
 
-- pushes `ghcr.io/OWNER/ironroot:v0.1.0`
-- pushes `ghcr.io/OWNER/ironroot:latest`
+- pushes `ghcr.io/parisnakitakejser/ironroot:v0.1.0`
+- pushes `ghcr.io/parisnakitakejser/ironroot:latest`
 - packages chart version `0.1.0`
 - pushes the Helm OCI artifact
 - uploads the chart `.tgz` to a stable GitHub Release

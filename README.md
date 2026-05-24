@@ -2,9 +2,9 @@
 
 ![Apache 2.0](https://img.shields.io/badge/license-Apache%202.0-blue)
 ![Go](https://img.shields.io/badge/go-1.26-00ADD8)
-![CI](https://github.com/ironroot/ironroot/actions/workflows/pr-checks.yaml/badge.svg)
+![CI](https://github.com/parisnakitakejser/ironroot/actions/workflows/pr-checks.yaml/badge.svg)
 ![Docs](https://img.shields.io/badge/docs-MkDocs-526CFE)
-![Website](https://github.com/ironroot/ironroot/actions/workflows/docs-website.yaml/badge.svg)
+![Website](https://github.com/parisnakitakejser/ironroot/actions/workflows/docs-website.yaml/badge.svg)
 
 > Airgap-first trust infrastructure
 
@@ -21,7 +21,7 @@ IronRoot is currently Alpha-stage. Documentation pages use maturity badges so re
 - **Validation badges** are only used when workflows have been tested in that environment.
 - **Capability badges** identify implemented capabilities such as OpenTelemetry support or zero-trust-oriented workflows.
 
-Most pages currently use `Stage: Alpha` and `Status: Draft`. The primary onboarding path is **Contributing > Local Development**, currently marked `Status: In Progress` with the validated local workflow badges. See `docs/contributing/documentation-standards.md` for the badge model.
+Most pages currently use `Stage: Alpha` and `Status: Draft`. The primary onboarding path is **Contributing > Local Development**, currently marked `Status: In Progress`. See `docs/contributing/documentation-standards.md` for the badge model.
 
 ## What the name means
 
@@ -52,27 +52,29 @@ Homelab servers and Kubernetes services
 ## Quick start
 
 ```bash
-just build-local
+just install-local
+ironroot-dev dev-init
+
 bin/ironroot-admin ca create-root \
   --name "IronRoot Local Root CA" \
   --password ironroot-local-root \
-  --out ./pki/root
+  --out .localdev/pki/root
 
 bin/ironroot-admin ca create-intermediate \
-  --root-cert ./pki/root/root-ca.crt \
-  --root-key ./pki/root/root-ca.key \
+  --root-cert .localdev/pki/root/root-ca.crt \
+  --root-key .localdev/pki/root/root-ca.key \
   --root-password ironroot-local-root \
   --password ironroot-local-intermediate \
-  --out ./pki/intermediate
+  --out .localdev/pki/intermediate
 
-bin/ironroot-admin --config ./examples/config.local.yaml init-server
-bin/ironroot-server --config ./examples/config.local.yaml
+bin/ironroot-admin --config .localdev/config/config.yaml init-server
+bin/ironroot-server --config .localdev/config/config.yaml
 ```
 
 ```bash
-bin/ironroot-admin --config ./examples/config.local.yaml create-token --host local-demo --ttl 24h
+bin/ironroot-admin --config .localdev/config/config.yaml create-token --host local-demo --ttl 24h
 bin/ironroot-client enroll --server http://localhost:8443 --hostname local-demo --token <token>
-bin/ironroot-client request-cert --server http://localhost:8443 --enrollment-id <id> --dns demo.home.arpa --out certs
+bin/ironroot-client request-cert --server http://localhost:8443 --enrollment-id <id> --dns demo.home.arpa --out .localdev/certs/demo.home.arpa
 ```
 
 For the browser-trusted website walkthrough, including `/etc/hosts`, nginx/Caddy/Python examples, and OS/browser trust-store installation, follow [docs/getting-started/local-quickstart.md](docs/getting-started/local-quickstart.md).
@@ -89,17 +91,14 @@ just build-all
 just install-local
 ```
 
-`just install-local` runs `just build-local` first, then copies the freshly built binaries into your local install prefix.
-
-The Makefile remains available for CI and compatibility, so `make build-local` still works.
+`just install-local` runs `just build-local` first, then copies the freshly built binaries into your local install prefix. It installs the production-facing binaries plus `ironroot-dev`, the contributor-only helper CLI used for local workspace setup:
 
 ```bash
-make build-local
-make build-linux
-make build-macos
-make build-all
-make install-local
+ironroot-dev --help
+ironroot-dev dev-init --help
 ```
+
+`ironroot-dev` is not required in production. It keeps developer workflows versioned, testable, and easier to extend than shell-only task runner logic.
 
 Release artifacts are packaged as:
 
@@ -144,7 +143,7 @@ IronRoot works with OpenTelemetry Collector, Prometheus, Tempo, Loki, and Grafan
 Kubernetes manifests live in `deploy/kubernetes`. The Podman-compatible image build lives in `deploy/container/Containerfile`.
 
 ```bash
-make container-build
+just container-build
 kubectl apply -k deploy/kubernetes
 ```
 
@@ -164,12 +163,12 @@ See `docs/airgap/` for offline signing, trust distribution, and artifact mirrori
 
 ## Install with Helm
 
-IronRoot publishes its Helm chart as an OCI artifact. Use `OWNER` as a placeholder for the GitHub organization or account that publishes your fork.
+IronRoot publishes its Helm chart as an OCI artifact under the project GitHub account.
 
 Install an RC chart:
 
 ```bash
-helm install ironroot oci://ghcr.io/OWNER/charts/ironroot \
+helm install ironroot oci://ghcr.io/parisnakitakejser/charts/ironroot \
   --version 0.1.0-rc.1 \
   --namespace ironroot \
   --create-namespace
@@ -178,13 +177,13 @@ helm install ironroot oci://ghcr.io/OWNER/charts/ironroot \
 Install a stable chart:
 
 ```bash
-helm install ironroot oci://ghcr.io/OWNER/charts/ironroot \
+helm install ironroot oci://ghcr.io/parisnakitakejser/charts/ironroot \
   --version 0.1.0 \
   --namespace ironroot \
   --create-namespace
 ```
 
-Air-gapped environments should mirror both `ghcr.io/OWNER/ironroot:<version>` and `oci://ghcr.io/OWNER/charts/ironroot`, or download the chart `.tgz` from the GitHub Release and move it through the approved offline package path.
+Air-gapped environments should mirror both `ghcr.io/parisnakitakejser/ironroot:<version>` and `oci://ghcr.io/parisnakitakejser/charts/ironroot`, or download the chart `.tgz` from the GitHub Release and move it through the approved offline package path.
 
 ## Documentation
 

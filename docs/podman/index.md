@@ -8,7 +8,7 @@
 Build the image:
 
 ```bash
-make container-build
+just container-build
 ```
 
 Run locally:

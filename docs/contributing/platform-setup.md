@@ -21,20 +21,20 @@ Windows support is planned, but not supported in the MVP.
 Install Go, Git, SQLite development libraries if your distribution requires them for CGO, and either Podman or Docker.
 
 ```bash
-make build-local
-make test
-make build-linux
+just build-local
+just test
+just build-linux
 ```
 
 Install local binaries:
 
 ```bash
-make install-local
+just install-local
 echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc
 source ~/.bashrc
 ```
 
-`make install-local` and `just install-local` rebuild current-platform binaries before installing them, so the installed commands match the latest checkout.
+`just install-local` rebuilds current-platform binaries before installing them, so the installed commands match the latest checkout.
 
 For zsh:
 
@@ -48,9 +48,9 @@ source ~/.zshrc
 Install Go and Git. Homebrew is optional but useful for `podman`, `docker`, `sqlite`, and documentation tooling.
 
 ```bash
-make build-local
-make test
-make build-macos
+just build-local
+just test
+just build-macos
 ```
 
 Apple Silicon uses the `darwin-arm64` target. Intel Macs use `darwin-amd64`.
@@ -58,7 +58,7 @@ Apple Silicon uses the `darwin-arm64` target. Intel Macs use `darwin-amd64`.
 Install local binaries:
 
 ```bash
-make install-local
+just install-local
 echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.zshrc
 source ~/.zshrc
 ```
@@ -73,11 +73,12 @@ xattr -d com.apple.quarantine ~/.local/bin/ironroot-admin
 
 ## Local Binary Install
 
-`make install-local` installs:
+`just install-local` installs:
 
 - `ironroot-server`
 - `ironroot-admin`
 - `ironroot-client`
+- `ironroot-dev`
 
 into:
 
@@ -88,7 +89,7 @@ into:
 Override with:
 
 ```bash
-make install-local INSTALL_PREFIX=/usr/local
+INSTALL_PREFIX=/usr/local just install-local
 ```
 
 ## PATH Setup
@@ -140,7 +141,7 @@ Firefox may use its own trust store on both Linux and macOS. Import the Root CA 
 Run the server with a local config:
 
 ```bash
-make run-server
+just run-server
 ```
 
 Use separate terminals for admin and client commands:

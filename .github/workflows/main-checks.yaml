@@ -21,11 +21,14 @@ jobs:
           go-version-file: go.mod
           cache: true
 
+      - name: Set up just
+        uses: extractions/setup-just@v3
+
       - name: Check formatting
-        run: make fmt-check
+        run: just fmt-check
 
       - name: Vet
-        run: make vet
+        run: just vet
 
       - name: golangci-lint
         uses: golangci/golangci-lint-action@v8
@@ -34,19 +37,19 @@ jobs:
           args: --timeout=5m
 
       - name: Unit tests
-        run: make test
+        run: just test
 
       - name: End-to-end tests
-        run: make test-e2e
+        run: just test-e2e
 
       - name: Security check smoke test
         run: go run ./cmd/ironroot-admin security-check --config ./examples/config.dev.yaml --output json --fail-on critical
 
       - name: Cross-platform build validation
-        run: make build-all
+        run: just build-all
 
       - name: CLI startup smoke test
-        run: make smoke-cli
+        run: just smoke-cli
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -58,8 +61,11 @@ jobs:
       - name: Install docs dependencies
         run: python -m pip install -r docs/requirements.txt
 
+      - name: Set up just
+        uses: extractions/setup-just@v3
+
       - name: Build docs
-        run: make docs-build
+        run: just docs-build
 
   helm:
     name: Helm chart
@@ -71,6 +77,9 @@ jobs:
       - name: Set up Helm
         uses: azure/setup-helm@v4
 
+      - name: Set up just
+        uses: extractions/setup-just@v3
+
       - name: Install kubeconform
         run: |
           curl -L -o kubeconform.tar.gz https://github.com/yannh/kubeconform/releases/download/v0.6.7/kubeconform-linux-amd64.tar.gz
@@ -78,10 +87,10 @@ jobs:
           sudo mv kubeconform /usr/local/bin/kubeconform
 
       - name: Helm lint
-        run: make helm-lint
+        run: just helm-lint
 
       - name: Helm template
-        run: make helm-template
+        run: just helm-template
 
       - name: Helm chart tests
-        run: make helm-test
+        run: just helm-test

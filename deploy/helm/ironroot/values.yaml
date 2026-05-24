@@ -1,7 +1,7 @@
 replicaCount: 1
 
 image:
-  repository: ghcr.io/OWNER/ironroot
+  repository: ghcr.io/parisnakitakejser/ironroot
   tag: ""
   pullPolicy: IfNotPresent
 

@@ -12,25 +12,25 @@ IronRoot publishes the MkDocs Material site from the generated `site/` directory
 Install documentation dependencies:
 
 ```bash
-make docs-install
+just docs-install
 ```
 
 Start a live preview:
 
 ```bash
-make docs-serve
+just docs-serve
 ```
 
 Build the production site locally:
 
 ```bash
-make docs-build
+just docs-build
 ```
 
 Generate the same local production output used by the website workflow:
 
 ```bash
-make docs-deploy-local
+just docs-deploy-local
 ```
 
 The generated static site is written to `site/`.
@@ -41,7 +41,7 @@ Avoid running a globally installed `mkdocs` unless you have installed the projec
 python -m pip install -r docs/requirements.txt
 ```
 
-The project Makefile is preferred because it uses `.venv-docs` and avoids missing-extension errors such as `No module named 'pymdownx'`.
+The project `justfile` is preferred because it uses `.venv-docs` and avoids missing-extension errors such as `No module named 'pymdownx'`.
 
 ## GitHub Pages Publishing
 
@@ -69,8 +69,8 @@ flowchart LR
 ## Contributor Rules
 
 - Edit source files in `docs/`, `mkdocs.yml`, examples, or deployment docs.
-- Preview locally with `make docs-serve`.
-- Run `make docs-build` before opening a pull request.
+- Preview locally with `just docs-serve`.
+- Run `just docs-build` before opening a pull request.
 - Do not commit generated `site/` output.
 - Do not edit the `website` branch by hand.
 

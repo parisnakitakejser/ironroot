@@ -8,7 +8,7 @@
 Build the binaries:
 
 ```bash
-make build
+just build
 ```
 
 Initialize the SQLite database:
