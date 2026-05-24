@@ -7,7 +7,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/ironroot/ironroot/internal/cli/admin"
+	"github.com/parisnakitakejser/ironroot/internal/cli/admin"
 )
 
 func main() {

@@ -8,8 +8,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ironroot/ironroot/internal/config"
-	"github.com/ironroot/ironroot/internal/testutil"
+	"github.com/parisnakitakejser/ironroot/internal/config"
+	"github.com/parisnakitakejser/ironroot/internal/testutil"
 )
 
 func TestLoadAuthorityAndSignCSR(t *testing.T) {

@@ -13,10 +13,10 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
 
-	"github.com/ironroot/ironroot/internal/ca"
-	"github.com/ironroot/ironroot/internal/db"
-	"github.com/ironroot/ironroot/internal/enrollment"
-	"github.com/ironroot/ironroot/internal/telemetry"
+	"github.com/parisnakitakejser/ironroot/internal/ca"
+	"github.com/parisnakitakejser/ironroot/internal/db"
+	"github.com/parisnakitakejser/ironroot/internal/enrollment"
+	"github.com/parisnakitakejser/ironroot/internal/telemetry"
 )
 
 type handler struct{ dep Dependencies }

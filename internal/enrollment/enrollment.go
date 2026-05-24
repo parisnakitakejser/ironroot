@@ -8,9 +8,9 @@ import (
 
 	"github.com/google/uuid"
 
-	ironcrypto "github.com/ironroot/ironroot/internal/crypto"
-	"github.com/ironroot/ironroot/internal/db"
-	"github.com/ironroot/ironroot/internal/telemetry"
+	ironcrypto "github.com/parisnakitakejser/ironroot/internal/crypto"
+	"github.com/parisnakitakejser/ironroot/internal/db"
+	"github.com/parisnakitakejser/ironroot/internal/telemetry"
 )
 
 var ErrInvalidToken = errors.New("invalid bootstrap token")

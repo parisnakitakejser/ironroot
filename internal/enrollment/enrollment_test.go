@@ -5,9 +5,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ironroot/ironroot/internal/config"
-	ironcrypto "github.com/ironroot/ironroot/internal/crypto"
-	"github.com/ironroot/ironroot/internal/db"
+	"github.com/parisnakitakejser/ironroot/internal/config"
+	ironcrypto "github.com/parisnakitakejser/ironroot/internal/crypto"
+	"github.com/parisnakitakejser/ironroot/internal/db"
 )
 
 func TestValidateAndEnroll(t *testing.T) {

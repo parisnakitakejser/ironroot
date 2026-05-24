@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ironroot/ironroot/internal/config"
+	"github.com/parisnakitakejser/ironroot/internal/config"
 )
 
 func TestMigrateAndRepositories(t *testing.T) {

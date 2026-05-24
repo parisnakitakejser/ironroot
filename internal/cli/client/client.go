@@ -28,10 +28,10 @@ import (
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/trace"
 
-	"github.com/ironroot/ironroot/internal/ca"
-	"github.com/ironroot/ironroot/internal/config"
-	"github.com/ironroot/ironroot/internal/telemetry"
-	apiclient "github.com/ironroot/ironroot/pkg/client"
+	"github.com/parisnakitakejser/ironroot/internal/ca"
+	"github.com/parisnakitakejser/ironroot/internal/config"
+	"github.com/parisnakitakejser/ironroot/internal/telemetry"
+	apiclient "github.com/parisnakitakejser/ironroot/pkg/client"
 )
 
 func New() *cobra.Command {

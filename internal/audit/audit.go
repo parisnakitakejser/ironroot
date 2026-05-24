@@ -8,8 +8,8 @@ import (
 	"github.com/google/uuid"
 	"go.opentelemetry.io/otel/trace"
 
-	"github.com/ironroot/ironroot/internal/db"
-	"github.com/ironroot/ironroot/internal/telemetry"
+	"github.com/parisnakitakejser/ironroot/internal/db"
+	"github.com/parisnakitakejser/ironroot/internal/telemetry"
 )
 
 type Logger struct{ Store db.Store }

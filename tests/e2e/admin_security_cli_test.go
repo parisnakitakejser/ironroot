@@ -8,9 +8,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/ironroot/ironroot/internal/cli/admin"
-	"github.com/ironroot/ironroot/internal/securitycheck"
-	"github.com/ironroot/ironroot/internal/testutil"
+	"github.com/parisnakitakejser/ironroot/internal/cli/admin"
+	"github.com/parisnakitakejser/ironroot/internal/securitycheck"
+	"github.com/parisnakitakejser/ironroot/internal/testutil"
 )
 
 func TestAdminBootstrapNonInteractiveGeneratesChecklist(t *testing.T) {

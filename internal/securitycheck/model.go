@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/ironroot/ironroot/internal/config"
+	"github.com/parisnakitakejser/ironroot/internal/config"
 )
 
 type Severity string

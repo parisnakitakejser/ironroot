@@ -9,7 +9,7 @@ import (
 
 	_ "github.com/mattn/go-sqlite3"
 
-	"github.com/ironroot/ironroot/internal/config"
+	"github.com/parisnakitakejser/ironroot/internal/config"
 )
 
 var ErrNotFound = errors.New("not found")

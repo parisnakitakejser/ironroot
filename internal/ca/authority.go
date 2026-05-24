@@ -15,8 +15,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/ironroot/ironroot/internal/config"
-	"github.com/ironroot/ironroot/internal/telemetry"
+	"github.com/parisnakitakejser/ironroot/internal/config"
+	"github.com/parisnakitakejser/ironroot/internal/telemetry"
 )
 
 type Authority interface {

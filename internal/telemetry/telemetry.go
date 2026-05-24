@@ -18,7 +18,7 @@ import (
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	semconv "go.opentelemetry.io/otel/semconv/v1.39.0"
 
-	"github.com/ironroot/ironroot/internal/config"
+	"github.com/parisnakitakejser/ironroot/internal/config"
 )
 
 type Shutdown func(context.Context) error

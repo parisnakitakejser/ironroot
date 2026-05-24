@@ -1,4 +1,4 @@
-module github.com/ironroot/ironroot
+module github.com/parisnakitakejser/ironroot
 
 go 1.26
 

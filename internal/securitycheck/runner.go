@@ -8,7 +8,7 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
 
-	"github.com/ironroot/ironroot/internal/telemetry"
+	"github.com/parisnakitakejser/ironroot/internal/telemetry"
 )
 
 type Runner struct {

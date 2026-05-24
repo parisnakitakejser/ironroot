@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ironroot/ironroot/internal/config"
+	"github.com/parisnakitakejser/ironroot/internal/config"
 )
 
 func TestCreateRootAdvancedDefaults(t *testing.T) {

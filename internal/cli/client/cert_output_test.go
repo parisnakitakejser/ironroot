@@ -14,7 +14,7 @@ import (
 	"testing"
 	"time"
 
-	apiclient "github.com/ironroot/ironroot/pkg/client"
+	apiclient "github.com/parisnakitakejser/ironroot/pkg/client"
 )
 
 func TestDefaultCertOutputDirForOS(t *testing.T) {

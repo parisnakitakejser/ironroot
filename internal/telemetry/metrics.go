@@ -34,7 +34,7 @@ type Metrics struct {
 }
 
 func Instruments() Metrics {
-	meter := otel.Meter("github.com/ironroot/ironroot")
+	meter := otel.Meter("github.com/parisnakitakejser/ironroot")
 	m := Metrics{}
 	m.APIRequests, _ = meter.Int64Counter("pki_api_requests_total")
 	m.APIRequestFailures, _ = meter.Int64Counter("pki_api_request_failures_total")

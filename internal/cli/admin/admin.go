@@ -18,13 +18,13 @@ import (
 	"github.com/spf13/cobra"
 	"go.opentelemetry.io/otel"
 
-	"github.com/ironroot/ironroot/internal/ca"
-	"github.com/ironroot/ironroot/internal/config"
-	ironcrypto "github.com/ironroot/ironroot/internal/crypto"
-	"github.com/ironroot/ironroot/internal/db"
-	"github.com/ironroot/ironroot/internal/securitycheck"
-	"github.com/ironroot/ironroot/internal/telemetry"
-	apiclient "github.com/ironroot/ironroot/pkg/client"
+	"github.com/parisnakitakejser/ironroot/internal/ca"
+	"github.com/parisnakitakejser/ironroot/internal/config"
+	ironcrypto "github.com/parisnakitakejser/ironroot/internal/crypto"
+	"github.com/parisnakitakejser/ironroot/internal/db"
+	"github.com/parisnakitakejser/ironroot/internal/securitycheck"
+	"github.com/parisnakitakejser/ironroot/internal/telemetry"
+	apiclient "github.com/parisnakitakejser/ironroot/pkg/client"
 )
 
 type ExitError struct {

@@ -6,7 +6,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/ironroot/ironroot/internal/cli/client"
+	"github.com/parisnakitakejser/ironroot/internal/cli/client"
 )
 
 func main() {

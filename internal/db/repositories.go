@@ -5,7 +5,7 @@ import (
 	"database/sql"
 	"time"
 
-	"github.com/ironroot/ironroot/internal/telemetry"
+	"github.com/parisnakitakejser/ironroot/internal/telemetry"
 )
 
 func (s *SQLStore) CreateBootstrapToken(ctx context.Context, t BootstrapToken) error {

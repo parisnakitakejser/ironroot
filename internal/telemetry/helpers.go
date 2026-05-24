@@ -12,7 +12,7 @@ import (
 )
 
 func StartSpan(ctx context.Context, name string, attrs ...attribute.KeyValue) (context.Context, trace.Span) {
-	return otel.Tracer("github.com/ironroot/ironroot").Start(ctx, name, trace.WithAttributes(attrs...))
+	return otel.Tracer("github.com/parisnakitakejser/ironroot").Start(ctx, name, trace.WithAttributes(attrs...))
 }
 
 func EndSpan(span trace.Span, err error) {
