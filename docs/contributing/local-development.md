@@ -59,6 +59,7 @@ go build -o bin/ironroot-server ./cmd/server
 go build -o bin/ironroot-admin ./cmd/ironroot-admin
 go build -o bin/ironroot-client ./cmd/ironroot-client
 go build -o bin/ironroot-dev ./cmd/ironroot-dev
+go build -o bin/irtop ./cmd/irtop
 ```
 
 Expected output:
@@ -69,6 +70,7 @@ bin/
   ironroot-admin
   ironroot-client
   ironroot-dev
+  irtop
 ```
 
 `just build` is kept as a compatibility alias for `just build-local`.
@@ -90,6 +92,7 @@ Option A: run from `./bin`:
 ./bin/ironroot-admin --help
 ./bin/ironroot-client --help
 ./bin/ironroot-dev --help
+./bin/irtop --help
 ```
 
 Option B: install into your user PATH:
@@ -100,6 +103,7 @@ cp bin/ironroot-server ~/.local/bin/
 cp bin/ironroot-admin ~/.local/bin/
 cp bin/ironroot-client ~/.local/bin/
 cp bin/ironroot-dev ~/.local/bin/
+cp bin/irtop ~/.local/bin/
 export PATH="$HOME/.local/bin:$PATH"
 ```
 
@@ -119,6 +123,7 @@ ironroot-admin --help
 ironroot-client --help
 ironroot-dev --help
 ironroot-dev dev-init --help
+irtop --help
 ```
 
 Linux bash PATH:
@@ -334,6 +339,46 @@ Or use:
 ```bash
 just run-server
 ```
+
+## Monitor The Local Server
+
+Use `irtop` for a read-only terminal view of the local API, CA status, certificates, enrollments, tokens, telemetry, and recent audit events.
+
+The default local development config leaves `server.tls.cert_file` and `server.tls.key_file` empty, so the local server listens with plain HTTP on port `8443`. The URL scheme must match the server config:
+
+```bash
+irtop --server http://localhost:8443
+```
+
+For a one-shot status check without the interactive UI:
+
+```bash
+irtop --server http://localhost:8443 --output text
+```
+
+You can also use the local `irtop` config example:
+
+```bash
+irtop --config examples/irtop.local.yaml
+```
+
+If you accidentally use HTTPS against the local HTTP server:
+
+```bash
+irtop --server https://localhost:8443
+```
+
+`irtop` will explain that the server appears to be responding with HTTP and suggest the local command above. It will not silently downgrade the connection.
+
+Production should use HTTPS:
+
+```bash
+irtop --server https://ironroot.example.com:8443 --ca-file ./root-ca.crt
+```
+
+Do not use `--insecure-skip-verify` unless you are intentionally debugging TLS trust.
+
+See [irtop](../api-cli/irtop.md) for all flags and keyboard shortcuts.
 
 ## Use Admin CLI Locally
 

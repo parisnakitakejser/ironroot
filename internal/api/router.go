@@ -48,6 +48,15 @@ func NewRouter(dep Dependencies) http.Handler {
 	r.Post("/v1/certificates/revoke", h.revokeCertificate)
 	r.Get("/v1/certificates/status/{serial}", h.certificateStatus)
 	r.Get("/v1/audit", h.audit)
+	r.Get("/v1/audit/recent", h.auditRecent)
+	r.Get("/v1/status/overview", h.statusOverview)
+	r.Get("/v1/status/server", h.statusServer)
+	r.Get("/v1/status/ca", h.statusCA)
+	r.Get("/v1/status/certificates", h.statusCertificates)
+	r.Get("/v1/status/enrollments", h.statusEnrollments)
+	r.Get("/v1/status/tokens", h.statusTokens)
+	r.Get("/v1/status/security", h.statusSecurity)
+	r.Get("/v1/status/telemetry", h.statusTelemetry)
 	return r
 }
 

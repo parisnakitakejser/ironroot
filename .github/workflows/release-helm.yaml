@@ -82,7 +82,7 @@ jobs:
           mkdir -p dist/releases
           for platform in linux-amd64 linux-arm64 darwin-amd64 darwin-arm64; do
             tar -C "dist/${platform}" -czf "dist/releases/ironroot-${platform}.tar.gz" \
-              ironroot-server ironroot-admin ironroot-client
+              ironroot-server ironroot-admin ironroot-client irtop
           done
           (cd dist/releases && sha256sum *.tar.gz > checksums.txt)
 

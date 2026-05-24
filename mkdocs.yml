@@ -117,6 +117,7 @@ nav:
       - Operations:
           - Dashboards: observability/dashboards.md
           - Alerting: observability/alerting.md
+          - irtop: observability/irtop.md
       - Deployment Integrations:
           - Kubernetes: observability/kubernetes.md
           - Podman: observability/podman.md
@@ -158,6 +159,7 @@ nav:
       - Runbooks:
           - Troubleshooting: operations/troubleshooting.md
           - Monitoring: operations/monitoring.md
+          - Monitoring With irtop: operations/monitoring-with-irtop.md
           - Performance: operations/performance.md
           - Scaling: operations/scaling.md
   - API & CLI:
@@ -167,6 +169,7 @@ nav:
           - ironroot-admin: api-cli/ironroot-admin.md
           - ironroot-client: api-cli/ironroot-client.md
           - ironroot-dev: api-cli/ironroot-dev.md
+          - irtop: api-cli/irtop.md
           - Examples: cli/examples.md
       - Configuration:
           - Configuration Reference: cli/configuration-reference.md

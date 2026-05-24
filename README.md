@@ -91,14 +91,23 @@ just build-all
 just install-local
 ```
 
-`just install-local` runs `just build-local` first, then copies the freshly built binaries into your local install prefix. It installs the production-facing binaries plus `ironroot-dev`, the contributor-only helper CLI used for local workspace setup:
+`just install-local` runs `just build-local` first, then copies the freshly built binaries into your local install prefix. It installs the production-facing binaries, `irtop` for operator monitoring, plus `ironroot-dev`, the contributor-only helper CLI used for local workspace setup:
 
 ```bash
+irtop --help
 ironroot-dev --help
 ironroot-dev dev-init --help
 ```
 
 `ironroot-dev` is not required in production. It keeps developer workflows versioned, testable, and easier to extend than shell-only task runner logic.
+
+IronRoot binaries:
+
+- `ironroot-server`: PKI API server
+- `ironroot-admin`: administrator CLI
+- `ironroot-client`: client enrollment and certificate CLI
+- `ironroot-dev`: contributor-only helper CLI
+- `irtop`: terminal UI for administrators to monitor IronRoot in real time
 
 Release artifacts are packaged as:
 
@@ -128,6 +137,20 @@ IronRoot is observability-first. The server, admin CLI, client CLI, REST API, en
 - Metrics cover API latency, enrollment failures, certificate lifecycle activity, security-check results, bootstrap runs, database latency, and telemetry exporter health.
 - JSON logs include `trace_id` and `span_id` when a span is active, without printing private keys, bootstrap token values, or sensitive CA material.
 - OTLP gRPC, OTLP HTTP, and Prometheus `/metrics` are supported.
+
+## Terminal Monitoring
+
+`irtop` provides a read-only terminal dashboard for IronRoot administrators:
+
+```bash
+irtop --server http://localhost:8443
+irtop --server http://localhost:8443 --output text
+irtop --server https://ironroot.example.com:8443 --ca-file ./root-ca.crt
+```
+
+It shows server health, CA health, certificates, enrollments, tokens, security status, telemetry status, and recent audit events without exposing private keys or token secret values.
+
+Local development uses HTTP when the server TLS config is empty. Production deployments should use HTTPS with a trusted CA bundle or system trust store. `irtop` never silently downgrades HTTPS to HTTP.
 
 Local observability examples live in `examples/otel/` and Grafana starter dashboards live in `examples/grafana/`.
 

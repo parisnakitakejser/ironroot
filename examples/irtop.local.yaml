@@ -1,0 +1,5 @@
+server: http://localhost:8443
+refresh: 5s
+default_view: overview
+output: tui
+insecure_skip_verify: false

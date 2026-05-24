@@ -138,6 +138,30 @@ func (s *SQLStore) GetEnrollment(ctx context.Context, id string) (Enrollment, er
 	return e, err
 }
 
+func (s *SQLStore) ListEnrollments(ctx context.Context) ([]Enrollment, error) {
+	ctx, span := telemetry.StartSpan(ctx, "db.list_enrollments")
+	started := time.Now()
+	rows, err := s.db.QueryContext(ctx, `SELECT id, hostname, machine_id, mac, token_id, created_at FROM enrollments ORDER BY created_at DESC`)
+	if err != nil {
+		telemetry.RecordDatabase(ctx, "list_enrollments", started, err)
+		telemetry.EndSpan(span, err)
+		return nil, err
+	}
+	defer rows.Close()
+	var out []Enrollment
+	for rows.Next() {
+		var e Enrollment
+		if err := rows.Scan(&e.ID, &e.Hostname, &e.MachineID, &e.MAC, &e.TokenID, &e.CreatedAt); err != nil {
+			return nil, err
+		}
+		out = append(out, e)
+	}
+	err = rows.Err()
+	telemetry.RecordDatabase(ctx, "list_enrollments", started, err)
+	telemetry.EndSpan(span, err)
+	return out, err
+}
+
 func (s *SQLStore) StoreIssuedCertificate(ctx context.Context, c IssuedCertificate) error {
 	ctx, span := telemetry.StartSpan(ctx, "db.store_issued_certificate")
 	started := time.Now()

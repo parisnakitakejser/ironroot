@@ -25,6 +25,7 @@ type Store interface {
 	RevokeBootstrapToken(context.Context, string) error
 	CreateEnrollment(context.Context, Enrollment) error
 	GetEnrollment(context.Context, string) (Enrollment, error)
+	ListEnrollments(context.Context) ([]Enrollment, error)
 	StoreIssuedCertificate(context.Context, IssuedCertificate) error
 	GetIssuedCertificate(context.Context, string) (IssuedCertificate, error)
 	ListIssuedCertificates(context.Context) ([]IssuedCertificate, error)

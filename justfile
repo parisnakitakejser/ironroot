@@ -23,24 +23,29 @@ build-local:
     {{go}} build -o "{{repo_root}}/bin/ironroot-admin" "{{repo_root}}/cmd/ironroot-admin"
     {{go}} build -o "{{repo_root}}/bin/ironroot-client" "{{repo_root}}/cmd/ironroot-client"
     {{go}} build -o "{{repo_root}}/bin/ironroot-dev" "{{repo_root}}/cmd/ironroot-dev"
+    {{go}} build -o "{{repo_root}}/bin/irtop" "{{repo_root}}/cmd/irtop"
 
 # Build Linux amd64 and arm64 binaries.
 build-linux:
     GOOS=linux GOARCH=amd64 {{go}} build -o dist/linux-amd64/ironroot-server ./cmd/server
     GOOS=linux GOARCH=amd64 {{go}} build -o dist/linux-amd64/ironroot-admin ./cmd/ironroot-admin
     GOOS=linux GOARCH=amd64 {{go}} build -o dist/linux-amd64/ironroot-client ./cmd/ironroot-client
+    GOOS=linux GOARCH=amd64 {{go}} build -o dist/linux-amd64/irtop ./cmd/irtop
     GOOS=linux GOARCH=arm64 {{go}} build -o dist/linux-arm64/ironroot-server ./cmd/server
     GOOS=linux GOARCH=arm64 {{go}} build -o dist/linux-arm64/ironroot-admin ./cmd/ironroot-admin
     GOOS=linux GOARCH=arm64 {{go}} build -o dist/linux-arm64/ironroot-client ./cmd/ironroot-client
+    GOOS=linux GOARCH=arm64 {{go}} build -o dist/linux-arm64/irtop ./cmd/irtop
 
 # Build macOS Intel and Apple Silicon binaries.
 build-macos:
     GOOS=darwin GOARCH=amd64 {{go}} build -o dist/darwin-amd64/ironroot-server ./cmd/server
     GOOS=darwin GOARCH=amd64 {{go}} build -o dist/darwin-amd64/ironroot-admin ./cmd/ironroot-admin
     GOOS=darwin GOARCH=amd64 {{go}} build -o dist/darwin-amd64/ironroot-client ./cmd/ironroot-client
+    GOOS=darwin GOARCH=amd64 {{go}} build -o dist/darwin-amd64/irtop ./cmd/irtop
     GOOS=darwin GOARCH=arm64 {{go}} build -o dist/darwin-arm64/ironroot-server ./cmd/server
     GOOS=darwin GOARCH=arm64 {{go}} build -o dist/darwin-arm64/ironroot-admin ./cmd/ironroot-admin
     GOOS=darwin GOARCH=arm64 {{go}} build -o dist/darwin-arm64/ironroot-client ./cmd/ironroot-client
+    GOOS=darwin GOARCH=arm64 {{go}} build -o dist/darwin-arm64/irtop ./cmd/irtop
 
 # Build all supported release targets.
 build-all: build-linux build-macos
@@ -49,7 +54,7 @@ build-all: build-linux build-macos
 install-local: build-local
     @echo "Installing freshly built binaries from ./bin into {{install_prefix}}/bin"
     mkdir -p "{{install_prefix}}/bin"
-    cp "{{repo_root}}/bin/ironroot-server" "{{repo_root}}/bin/ironroot-admin" "{{repo_root}}/bin/ironroot-client" "{{repo_root}}/bin/ironroot-dev" "{{install_prefix}}/bin/"
+    cp "{{repo_root}}/bin/ironroot-server" "{{repo_root}}/bin/ironroot-admin" "{{repo_root}}/bin/ironroot-client" "{{repo_root}}/bin/ironroot-dev" "{{repo_root}}/bin/irtop" "{{install_prefix}}/bin/"
 
 # Run the local server using .localdev config.
 run-server: build-local
@@ -60,6 +65,7 @@ smoke-cli: build-local
     "{{repo_root}}/bin/ironroot-admin" --help >/dev/null
     "{{repo_root}}/bin/ironroot-client" --help >/dev/null
     "{{repo_root}}/bin/ironroot-dev" --help >/dev/null
+    "{{repo_root}}/bin/irtop" --help >/dev/null
     "{{repo_root}}/bin/ironroot-server" --version >/dev/null
 
 # Remove local development state.
