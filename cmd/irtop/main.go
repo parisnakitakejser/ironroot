@@ -116,7 +116,10 @@ func main() {
 		}
 		fmt.Println(irtop.RenderText(snapshot))
 	case "tui", "":
-		program := tea.NewProgram(irtop.NewModel(client, cfg.Refresh, irtop.ParseView(cfg.DefaultView)))
+		program := tea.NewProgram(
+			irtop.NewModel(client, cfg.Refresh, irtop.ParseView(cfg.DefaultView)),
+			tea.WithAltScreen(),
+		)
 		if _, err := program.Run(); err != nil {
 			fmt.Fprintf(os.Stderr, "irtop failed: %v\n", err)
 			os.Exit(1)

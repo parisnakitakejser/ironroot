@@ -132,33 +132,84 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m Model) View() string {
-	var body string
+	body := m.renderBody()
+	if m.err != nil {
+		body += "\n\n" + alertBox(m.contentWidth(), "API error", m.err.Error())
+	}
+	return m.frame(body)
+}
+
+func (m Model) renderBody() string {
 	switch m.view {
 	case ViewCertificates:
-		body = m.certificatesView()
+		return m.certificatesView()
 	case ViewEnrollments:
-		body = m.enrollmentsView()
+		return m.enrollmentsView()
 	case ViewTokens:
-		body = m.tokensView()
+		return m.tokensView()
 	case ViewCAHealth:
-		body = m.caView()
+		return m.caView()
 	case ViewSecurity:
-		body = m.securityView()
+		return m.securityView()
 	case ViewTelemetry:
-		body = m.telemetryView()
+		return m.telemetryView()
 	case ViewAuditLog:
-		body = m.auditView()
+		return m.auditView()
 	case ViewServer:
-		body = m.serverView()
+		return m.serverView()
 	case ViewHelp:
-		body = helpView()
+		return m.helpView()
 	default:
-		body = m.overviewView()
+		return m.overviewView()
 	}
-	if m.err != nil {
-		body += "\n\n" + warnStyle.Render("API error: "+m.err.Error())
+}
+
+func (m Model) frame(content string) string {
+	if m.width <= 0 || m.height <= 0 {
+		return content
 	}
-	return titleStyle.Render("irtop - IronRoot Top") + "\n" + navLine(m.view) + "\n\n" + body + "\n\n" + subtleStyle.Render("q quit | ? help | r refresh | 1-9 views")
+	innerWidth := max(40, m.width-4)
+	bodyHeight := max(1, m.height-5)
+	header := m.header(innerWidth)
+	tabs := m.tabs(innerWidth)
+	body := appStyle.Width(innerWidth).Height(bodyHeight).MaxWidth(innerWidth).Render(content)
+	footer := footerStyle.Width(innerWidth).Render(" q quit  ? help  r refresh  1-9 views  / filter  s sort  enter details")
+	screen := strings.Join([]string{header, tabs, body, footer}, "\n")
+	return appStyle.Width(m.width).Height(m.height).Padding(0, 2).Render(screen)
+}
+
+func (m Model) header(width int) string {
+	o := m.snapshot.Overview
+	status := empty(o.Server.Status, "connecting")
+	version := empty(o.Server.Version, "dev")
+	updated := "not refreshed"
+	if !m.snapshot.UpdatedAt.IsZero() {
+		updated = m.snapshot.UpdatedAt.Format("15:04:05")
+	}
+	left := " IRONROOT TOP "
+	mid := fmt.Sprintf(" %s  version %s  api %s/%s ", statusBadge(status), version, empty(o.Server.APIHealth, "unknown"), empty(o.Server.Readiness, "unknown"))
+	right := subtleStyle.Render("updated " + updated)
+	gap := max(1, width-lipgloss.Width(left)-lipgloss.Width(mid)-lipgloss.Width(right))
+	return headerStyle.Width(width).Render(titleStyle.Render(left) + mid + strings.Repeat(" ", gap) + right)
+}
+
+func (m Model) tabs(width int) string {
+	names := []string{"1 Overview", "2 Certs", "3 Enroll", "4 Tokens", "5 CA", "6 Security", "7 Telemetry", "8 Audit", "9 Server"}
+	for i := range names {
+		if View(i) == m.view {
+			names[i] = activeTabStyle.Render(names[i])
+		} else {
+			names[i] = tabStyle.Render(names[i])
+		}
+	}
+	return tabsStyle.Width(width).Render(strings.Join(names, " "))
+}
+
+func (m Model) contentWidth() int {
+	if m.width <= 0 {
+		return 80
+	}
+	return max(40, m.width-4)
 }
 
 func (m Model) refreshNow() tea.Cmd {
@@ -182,43 +233,61 @@ func tick(d time.Duration) tea.Cmd {
 func (m Model) overviewView() string {
 	o := m.snapshot.Overview
 	if o.Server.Status == "" {
-		return "Waiting for IronRoot status..."
+		return panel(m.contentWidth(), "Waiting", "Waiting for IronRoot status...")
 	}
+	contentWidth := m.contentWidth()
+	panelWidth := max(34, (contentWidth-2)/2)
+	wideWidth := max(34, contentWidth)
 	return strings.Join([]string{
-		box("IronRoot", fmt.Sprintf("Server: %s    Version: %s\nUptime: n/a    API: %s/%s", o.Server.Status, empty(o.Server.Version, "dev"), o.Server.APIHealth, o.Server.Readiness)),
+		panel(wideWidth, "IronRoot", strings.Join([]string{
+			metricLine("Server", statusBadge(o.Server.Status), "Version", empty(o.Server.Version, "dev")),
+			metricLine("API", o.Server.APIHealth+"/"+o.Server.Readiness, "CA", empty(o.CA.ChainStatus, "unknown")),
+		}, "\n")),
 		row(
-			box("Certificates", fmt.Sprintf("Active: %d\nExpiring: %d\nRevoked: %d", o.Certificates.Active, o.Certificates.ExpiringSoon, o.Certificates.Revoked)),
-			box("Enrollments", fmt.Sprintf("Success: %d\nFailed: %d\nInvalid tokens: %d", o.Enrollments.Successful, o.Enrollments.Failed, o.Enrollments.InvalidTokenAttempts)),
+			panel(panelWidth, "Certificates", strings.Join([]string{
+				metricLine("Active", fmt.Sprint(o.Certificates.Active), "Expiring", warnNumber(o.Certificates.ExpiringSoon)),
+				metricLine("Issued today", fmt.Sprint(o.Certificates.IssuedToday), "Revoked", warnNumber(o.Certificates.Revoked)),
+			}, "\n")),
+			panel(panelWidth, "Enrollments", strings.Join([]string{
+				metricLine("Success", fmt.Sprint(o.Enrollments.Successful), "Failed", warnNumber(o.Enrollments.Failed)),
+				metricLine("Pending", fmt.Sprint(o.Enrollments.Pending), "Invalid tokens", warnNumber(o.Enrollments.InvalidTokenAttempts)),
+			}, "\n")),
 		),
 		row(
-			box("Security", fmt.Sprintf("Status: %s\nCritical: %d\nHigh: %d\nWarnings: %d", o.Security.Status, o.Security.CriticalFindings, o.Security.HighFindings, o.Security.Warnings)),
-			box("Telemetry", fmt.Sprintf("Enabled: %t\nTraces: %t\nMetrics: %t", o.Telemetry.Enabled, o.Telemetry.TracesEnabled, o.Telemetry.MetricsEnabled)),
+			panel(panelWidth, "Security", strings.Join([]string{
+				metricLine("Status", statusBadge(o.Security.Status), "Critical", warnNumber(o.Security.CriticalFindings)),
+				metricLine("High", warnNumber(o.Security.HighFindings), "Warnings", warnNumber(o.Security.Warnings)),
+			}, "\n")),
+			panel(panelWidth, "Telemetry", strings.Join([]string{
+				metricLine("Enabled", boolBadge(o.Telemetry.Enabled), "Exporter", empty(o.Telemetry.ExporterStatus, "unknown")),
+				metricLine("Traces", boolBadge(o.Telemetry.TracesEnabled), "Metrics", boolBadge(o.Telemetry.MetricsEnabled)),
+			}, "\n")),
 		),
-	}, "\n")
+	}, "\n\n")
 }
 
 func (m Model) certificatesView() string {
-	lines := []string{"SERIAL          DNS                    STATUS   EXPIRES      DAYS  ISSUER"}
+	lines := []string{tableHeader("SERIAL          DNS                    STATUS   EXPIRES      DAYS  ISSUER")}
 	for _, cert := range m.snapshot.Certificates {
-		lines = append(lines, fmt.Sprintf("%-15s %-22s %-8s %-12s %4d  %.12s", short(cert.Serial), strings.Join(cert.DNSNames, ","), cert.Status, date(cert.ExpiresAt), cert.DaysRemaining, cert.Issuer))
+		lines = append(lines, tableRow(fmt.Sprintf("%-15s %-22s %-8s %-12s %4d  %.12s", short(cert.Serial), truncate(strings.Join(cert.DNSNames, ","), 22), cert.Status, date(cert.ExpiresAt), cert.DaysRemaining, cert.Issuer)))
 	}
-	return strings.Join(lines, "\n")
+	return panel(m.contentWidth(), "Certificates", strings.Join(lines, "\n"))
 }
 
 func (m Model) enrollmentsView() string {
-	lines := []string{"ENROLLMENT ID                         HOST                 STATUS   CERTS  CREATED"}
+	lines := []string{tableHeader("ENROLLMENT ID                         HOST                 STATUS   CERTS  CREATED")}
 	for _, en := range m.snapshot.Enrollments {
-		lines = append(lines, fmt.Sprintf("%-37s %-20s %-8s %5d  %s", en.ID, en.Hostname, en.Status, en.CertificateCount, date(en.CreatedAt)))
+		lines = append(lines, tableRow(fmt.Sprintf("%-37s %-20s %-8s %5d  %s", en.ID, truncate(en.Hostname, 20), en.Status, en.CertificateCount, date(en.CreatedAt))))
 	}
-	return strings.Join(lines, "\n")
+	return panel(m.contentWidth(), "Enrollments", strings.Join(lines, "\n"))
 }
 
 func (m Model) tokensView() string {
-	lines := []string{"TOKEN ID                              HOST                 STATUS   USED  EXPIRES"}
+	lines := []string{tableHeader("TOKEN ID                              HOST                 STATUS   USED  EXPIRES")}
 	for _, token := range m.snapshot.Tokens {
-		lines = append(lines, fmt.Sprintf("%-37s %-20s %-8s %-5t %s", token.ID, token.Host, token.Status, token.Used, date(token.ExpiresAt)))
+		lines = append(lines, tableRow(fmt.Sprintf("%-37s %-20s %-8s %-5t %s", token.ID, truncate(token.Host, 20), token.Status, token.Used, date(token.ExpiresAt))))
 	}
-	return strings.Join(lines, "\n")
+	return panel(m.contentWidth(), "Bootstrap Tokens", strings.Join(lines, "\n"))
 }
 
 func (m Model) caView() string {
@@ -227,17 +296,15 @@ func (m Model) caView() string {
 		ca = m.snapshot.Overview.CA
 	}
 	lines := []string{
-		"Root fingerprint:         " + short(ca.RootFingerprint),
-		"Root expires:             " + date(ca.RootExpiresAt),
-		"Intermediate fingerprint: " + short(ca.IntermediateFingerprint),
-		"Intermediate expires:     " + date(ca.IntermediateExpiresAt),
-		"Active issuer:            " + short(ca.ActiveIssuer),
-		"Chain status:             " + ca.ChainStatus,
+		metricLine("Root fingerprint", short(ca.RootFingerprint), "Root expires", date(ca.RootExpiresAt)),
+		metricLine("Intermediate", short(ca.IntermediateFingerprint), "Intermediate expires", date(ca.IntermediateExpiresAt)),
+		metricLine("Active issuer", short(ca.ActiveIssuer), "Chain", statusBadge(ca.ChainStatus)),
+		metricLine("Disabled issuers", fmt.Sprint(ca.DisabledIssuers), "Retired issuers", fmt.Sprint(ca.RetiredIssuers)),
 	}
 	for _, warning := range ca.Warnings {
 		lines = append(lines, warnStyle.Render("warning: "+warning))
 	}
-	return strings.Join(lines, "\n")
+	return panel(m.contentWidth(), "CA Health", strings.Join(lines, "\n"))
 }
 
 func (m Model) securityView() string {
@@ -245,7 +312,12 @@ func (m Model) securityView() string {
 	if s.Status == "" {
 		s = m.snapshot.Overview.Security
 	}
-	return fmt.Sprintf("Status: %s\nCritical findings: %d\nHigh findings: %d\nWarnings: %d\n\n%s", s.Status, s.CriticalFindings, s.HighFindings, s.Warnings, s.Message)
+	return panel(m.contentWidth(), "Security", strings.Join([]string{
+		metricLine("Status", statusBadge(s.Status), "Critical", warnNumber(s.CriticalFindings)),
+		metricLine("High", warnNumber(s.HighFindings), "Warnings", warnNumber(s.Warnings)),
+		"",
+		s.Message,
+	}, "\n"))
 }
 
 func (m Model) telemetryView() string {
@@ -253,15 +325,21 @@ func (m Model) telemetryView() string {
 	if t.ExporterStatus == "" {
 		t = m.snapshot.Overview.Telemetry
 	}
-	return fmt.Sprintf("Enabled: %t\nTraces: %t\nMetrics: %t\nLogs: %t\nOTLP: %s (%s)\nPrometheus: %t %s\nExporter: %s", t.Enabled, t.TracesEnabled, t.MetricsEnabled, t.LogsEnabled, t.OTLPEndpoint, t.OTLPProtocol, t.PrometheusEnabled, t.PrometheusPath, t.ExporterStatus)
+	return panel(m.contentWidth(), "Telemetry", strings.Join([]string{
+		metricLine("Enabled", boolBadge(t.Enabled), "Exporter", empty(t.ExporterStatus, "unknown")),
+		metricLine("Traces", boolBadge(t.TracesEnabled), "Metrics", boolBadge(t.MetricsEnabled)),
+		metricLine("Logs", boolBadge(t.LogsEnabled), "Prometheus", boolBadge(t.PrometheusEnabled)),
+		metricLine("OTLP", empty(t.OTLPEndpoint, "not configured"), "Protocol", empty(t.OTLPProtocol, "n/a")),
+		metricLine("Metrics path", empty(t.PrometheusPath, "n/a"), "", ""),
+	}, "\n"))
 }
 
 func (m Model) auditView() string {
-	lines := []string{"TIME                  SEVERITY  ACTION                    ACTOR      TARGET"}
+	lines := []string{tableHeader("TIME                  SEVERITY  ACTION                    ACTOR      TARGET")}
 	for _, event := range m.snapshot.Audit {
-		lines = append(lines, fmt.Sprintf("%-21s %-9s %-25s %-10s %s", event.Timestamp.Format("2006-01-02 15:04:05"), event.Severity, event.Action, event.Actor, event.Target))
+		lines = append(lines, tableRow(fmt.Sprintf("%-21s %-9s %-25s %-10s %s", event.Timestamp.Format("2006-01-02 15:04:05"), event.Severity, truncate(event.Action, 25), truncate(event.Actor, 10), event.Target)))
 	}
-	return strings.Join(lines, "\n")
+	return panel(m.contentWidth(), "Recent Audit Events", strings.Join(lines, "\n"))
 }
 
 func (m Model) serverView() string {
@@ -269,11 +347,16 @@ func (m Model) serverView() string {
 	if s.Status == "" {
 		s = m.snapshot.Overview.Server
 	}
-	return fmt.Sprintf("Status: %s\nVersion: %s\nAPI: %s / %s\nAddress: %s\nTLS: %t\nDatabase: %s\nGo: %s\nGoroutines: %d", s.Status, empty(s.Version, "dev"), s.APIHealth, s.Readiness, s.APIAddress, s.TLSEnabled, s.DatabaseType, s.GoVersion, s.Goroutines)
+	return panel(m.contentWidth(), "Server", strings.Join([]string{
+		metricLine("Status", statusBadge(s.Status), "Version", empty(s.Version, "dev")),
+		metricLine("API", s.APIHealth+" / "+s.Readiness, "Address", empty(s.APIAddress, "unknown")),
+		metricLine("TLS", boolBadge(s.TLSEnabled), "Database", empty(s.DatabaseType, "unknown")),
+		metricLine("Go", empty(s.GoVersion, "unknown"), "Goroutines", fmt.Sprint(s.Goroutines)),
+	}, "\n"))
 }
 
-func helpView() string {
-	return strings.Join([]string{
+func (m Model) helpView() string {
+	return panel(m.contentWidth(), "Help", strings.Join([]string{
 		"q       quit",
 		"?       help",
 		"r       refresh now",
@@ -290,32 +373,80 @@ func helpView() string {
 		"s       sort (planned)",
 		"enter   details (planned)",
 		"esc     back",
-	}, "\n")
+	}, "\n"))
 }
 
 var (
-	titleStyle  = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("39"))
-	subtleStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("245"))
-	warnStyle   = lipgloss.NewStyle().Foreground(lipgloss.Color("214"))
-	boxStyle    = lipgloss.NewStyle().Border(lipgloss.RoundedBorder()).Padding(0, 1).Width(38)
+	appBg          = lipgloss.Color("235")
+	titleStyle     = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("231"))
+	headerStyle    = lipgloss.NewStyle().Foreground(lipgloss.Color("252")).Background(lipgloss.Color("24")).Bold(true)
+	appStyle       = lipgloss.NewStyle().Background(appBg)
+	tabsStyle      = lipgloss.NewStyle().Background(appBg)
+	tabStyle       = lipgloss.NewStyle().Foreground(lipgloss.Color("244")).Background(lipgloss.Color("236")).Padding(0, 1)
+	activeTabStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("16")).Background(lipgloss.Color("81")).Bold(true).Padding(0, 1)
+	panelStyle     = lipgloss.NewStyle().Border(lipgloss.RoundedBorder()).BorderForeground(lipgloss.Color("63")).Background(appBg).Padding(0, 1)
+	tableHeadStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("81")).Bold(true)
+	tableRowStyle  = lipgloss.NewStyle().Foreground(lipgloss.Color("252"))
+	subtleStyle    = lipgloss.NewStyle().Foreground(lipgloss.Color("245"))
+	warnStyle      = lipgloss.NewStyle().Foreground(lipgloss.Color("214"))
+	okStyle        = lipgloss.NewStyle().Foreground(lipgloss.Color("82")).Bold(true)
+	badStyle       = lipgloss.NewStyle().Foreground(lipgloss.Color("203")).Bold(true)
+	footerStyle    = lipgloss.NewStyle().Foreground(lipgloss.Color("245")).Background(lipgloss.Color("236"))
 )
 
-func navLine(active View) string {
-	names := []string{"1 Overview", "2 Certificates", "3 Enrollments", "4 Tokens", "5 CA", "6 Security", "7 Telemetry", "8 Audit", "9 Server"}
-	for i := range names {
-		if View(i) == active {
-			names[i] = titleStyle.Render(names[i])
-		}
-	}
-	return strings.Join(names, "  ")
+func panel(width int, title, body string) string {
+	return panelStyle.Width(panelContentWidth(width)).Render(titleStyle.Render(" "+title+" ") + "\n" + body)
 }
 
-func box(title, body string) string {
-	return boxStyle.Render(titleStyle.Render(title) + "\n" + body)
+func alertBox(width int, title, body string) string {
+	return panelStyle.BorderForeground(lipgloss.Color("203")).Width(panelContentWidth(width)).Render(badStyle.Render(" "+title+" ") + "\n" + body)
 }
 
 func row(left, right string) string {
 	return lipgloss.JoinHorizontal(lipgloss.Top, left, "  ", right)
+}
+
+func metricLine(leftLabel, leftValue, rightLabel, rightValue string) string {
+	left := subtleStyle.Render(leftLabel+": ") + leftValue
+	if rightLabel == "" {
+		return left
+	}
+	return fmt.Sprintf("%-42s %s", left, subtleStyle.Render(rightLabel+": ")+rightValue)
+}
+
+func tableHeader(s string) string {
+	return tableHeadStyle.Render(s)
+}
+
+func tableRow(s string) string {
+	return tableRowStyle.Render(s)
+}
+
+func statusBadge(s string) string {
+	switch strings.ToLower(s) {
+	case "healthy", "ready", "valid", "pass", "active", "ok":
+		return okStyle.Render(s)
+	case "critical", "high", "failed", "error", "unconfigured", "revoked", "expired":
+		return badStyle.Render(empty(s, "unknown"))
+	case "":
+		return warnStyle.Render("unknown")
+	default:
+		return warnStyle.Render(s)
+	}
+}
+
+func boolBadge(v bool) string {
+	if v {
+		return okStyle.Render("on")
+	}
+	return subtleStyle.Render("off")
+}
+
+func warnNumber(v int) string {
+	if v > 0 {
+		return warnStyle.Render(fmt.Sprint(v))
+	}
+	return okStyle.Render("0")
 }
 
 func short(s string) string {
@@ -323,6 +454,29 @@ func short(s string) string {
 		return s
 	}
 	return s[:14]
+}
+
+func truncate(s string, n int) string {
+	if len(s) <= n {
+		return s
+	}
+	if n <= 1 {
+		return s[:n]
+	}
+	return s[:n-1] + "."
+}
+
+func max(a, b int) int {
+	if a > b {
+		return a
+	}
+	return b
+}
+
+func panelContentWidth(outerWidth int) int {
+	// lipgloss Width applies to content. The rounded border plus horizontal
+	// padding add four cells, so callers pass the desired visible panel width.
+	return max(16, outerWidth-4)
 }
 
 func date(t time.Time) string {
