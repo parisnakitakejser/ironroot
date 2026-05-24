@@ -166,6 +166,7 @@ nav:
       - CLI:
           - ironroot-admin: api-cli/ironroot-admin.md
           - ironroot-client: api-cli/ironroot-client.md
+          - ironroot-dev: api-cli/ironroot-dev.md
           - Examples: cli/examples.md
       - Configuration:
           - Configuration Reference: cli/configuration-reference.md
