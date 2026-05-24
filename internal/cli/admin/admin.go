@@ -458,6 +458,9 @@ func createToken(configPath *string) *cobra.Command {
 			fmt.Fprintln(cmd.ErrOrStderr(), "WARNING: bootstrap token TTL is longer than 24h. Short-lived tokens are safer.")
 		}
 		fmt.Fprintf(cmd.OutOrStdout(), "Token:\n%s\n\n", token)
+		fmt.Fprintf(cmd.OutOrStdout(), "Token database:\n%s\n\n", cfg.Database.DSN)
+		fmt.Fprintln(cmd.OutOrStdout(), "Before enrolling, make sure ironroot-server is running with the same --config file so it reads this database.")
+		fmt.Fprintln(cmd.OutOrStdout())
 		fmt.Fprintln(cmd.OutOrStdout(), "Next step:")
 		fmt.Fprintf(cmd.OutOrStdout(), "ironroot-client enroll \\\n  --server http://localhost:8443 \\\n  --hostname %s \\\n  --token %s\n", hostname, token)
 		return nil

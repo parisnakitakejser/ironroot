@@ -211,17 +211,13 @@ The generated local config uses:
 - Telemetry disabled by default.
 - JSON logs to stdout.
 
-If you run commands from the workspace base directory, this is enough:
+The commands below assume you run them from the workspace base directory. If you run them from somewhere else on the machine, pass the generated absolute config path printed by `ironroot-dev dev-init` anywhere the guide uses `--config`:
 
 ```bash
-ironroot-server --config .localdev/config/config.yaml
+ironroot-admin security-check --config /path/to/workspace/.localdev/config/config.yaml
 ```
 
-If you run commands from somewhere else on the machine, pass the generated absolute config path printed by `ironroot-dev dev-init`:
-
-```bash
-ironroot-server --config /path/to/workspace/.localdev/config/config.yaml
-```
+Start `ironroot-server` after the local Root and Intermediate CA files exist. Before that point the config is valid, but certificate issuance cannot work because the configured PKI files have not been created yet.
 
 ## Local PKI Bootstrap Flow
 
@@ -256,61 +252,6 @@ ironroot-admin ca inspect \
   .localdev/pki/intermediate/intermediate-ca.crt
 ```
 
-## Install Local Trust On A Linux Machine
-
-After you request a test certificate, the most common question is which CA file should be installed as the trusted certificate.
-
-Install the **Root CA public certificate** as the trust anchor:
-
-```text
-.localdev/pki/root/root-ca.crt
-```
-
-or the equivalent trust-bundle copy:
-
-```text
-.localdev/pki/root/trust-bundle/root-ca.crt
-```
-
-Do **not** install these files as system trust:
-
-- `.localdev/pki/root/root-ca.key`: Root CA private key. Never copy this to a Linux machine for trust.
-- `.localdev/pki/intermediate/intermediate-ca.key`: Intermediate private key. This belongs only on the IronRoot server.
-- `.localdev/pki/intermediate/intermediate-ca.crt`: public Intermediate CA certificate. Services should present it in the chain, but normal OS trust should anchor at the Root CA.
-
-The Intermediate CA certificate is still important. It is included in:
-
-```text
-.localdev/pki/intermediate/ca-chain.crt
-.localdev/certs/demo.local/ca-chain.crt
-.localdev/certs/demo.local/fullchain.crt
-```
-
-Use those chain files when configuring a service such as nginx, Caddy, or an application that needs to serve the leaf certificate together with the Intermediate. Trust stores should receive the Root CA certificate.
-
-Debian/Ubuntu:
-
-```bash
-sudo cp .localdev/pki/root/root-ca.crt /usr/local/share/ca-certificates/ironroot-local.crt
-sudo update-ca-certificates
-```
-
-Fedora/RHEL:
-
-```bash
-sudo cp .localdev/pki/root/root-ca.crt /etc/pki/ca-trust/source/anchors/ironroot-local.crt
-sudo update-ca-trust
-```
-
-Verify the installed trust path with OpenSSL:
-
-```bash
-openssl verify \
-  -CAfile .localdev/pki/root/root-ca.crt \
-  -untrusted .localdev/pki/intermediate/intermediate-ca.crt \
-  .localdev/certs/demo.local/tls.crt
-```
-
 Run the first-run bootstrap guide:
 
 ```bash
@@ -338,6 +279,21 @@ Or use:
 
 ```bash
 just run-server
+```
+
+If the server exits with `bind: address already in use`, another process is already listening on `localhost:8443`. Stop the existing process, or run this local server on another port and use the same port in every client command:
+
+```bash
+IRONROOT_SERVER_ADDRESS=localhost:9443 \
+  ironroot-server --config .localdev/config/config.yaml
+```
+
+Then use:
+
+```bash
+irtop --server http://localhost:9443
+ironroot-client enroll --server http://localhost:9443 --hostname demo.local --token <token>
+ironroot-client request-cert --server http://localhost:9443 --enrollment-id <enrollment_id> --dns demo.local --out .localdev/certs/demo.local
 ```
 
 ## Monitor The Local Server
@@ -395,6 +351,14 @@ ironroot-admin create-token \
   --ttl 24h
 ```
 
+The token is stored in the SQLite database from `.localdev/config/config.yaml`. The server you enroll against must be running with that same config. If an older `ironroot-server` is still listening on `localhost:8443` from another workspace, enrollment will return `401 Unauthorized` with `invalid bootstrap token` because that server is reading a different database.
+
+Check which database contains the token:
+
+```bash
+ironroot-admin list-tokens --config .localdev/config/config.yaml
+```
+
 ## Use Client CLI Locally
 
 Enroll:
@@ -428,6 +392,61 @@ Inspect generated files:
 find .localdev/certs/demo.local -maxdepth 1 -type f -print
 cat .localdev/certs/demo.local/README.txt
 cat .localdev/certs/demo.local/metadata.json
+```
+
+Verify the issued certificate chain:
+
+```bash
+openssl verify \
+  -CAfile .localdev/pki/root/root-ca.crt \
+  -untrusted .localdev/pki/intermediate/intermediate-ca.crt \
+  .localdev/certs/demo.local/tls.crt
+```
+
+## Install Local Trust On A Linux Machine
+
+After you request a test certificate, the most common question is which CA file should be installed as the trusted certificate.
+
+Install the **Root CA public certificate** as the trust anchor:
+
+```text
+.localdev/pki/root/root-ca.crt
+```
+
+or the equivalent trust-bundle copy:
+
+```text
+.localdev/pki/root/trust-bundle/root-ca.crt
+```
+
+Do **not** install these files as system trust:
+
+- `.localdev/pki/root/root-ca.key`: Root CA private key. Never copy this to a Linux machine for trust.
+- `.localdev/pki/intermediate/intermediate-ca.key`: Intermediate private key. This belongs only on the IronRoot server.
+- `.localdev/pki/intermediate/intermediate-ca.crt`: public Intermediate CA certificate. Services should present it in the chain, but normal OS trust should anchor at the Root CA.
+
+The Intermediate CA certificate is still important. It is included in:
+
+```text
+.localdev/pki/intermediate/ca-chain.crt
+.localdev/certs/demo.local/ca-chain.crt
+.localdev/certs/demo.local/fullchain.crt
+```
+
+Use those chain files when configuring a service such as nginx, Caddy, or an application that needs to serve the leaf certificate together with the Intermediate. Trust stores should receive the Root CA certificate.
+
+Debian/Ubuntu:
+
+```bash
+sudo cp .localdev/pki/root/root-ca.crt /usr/local/share/ca-certificates/ironroot-local.crt
+sudo update-ca-certificates
+```
+
+Fedora/RHEL:
+
+```bash
+sudo cp .localdev/pki/root/root-ca.crt /etc/pki/ca-trust/source/anchors/ironroot-local.crt
+sudo update-ca-trust
 ```
 
 ## Debugging IronRoot Locally
