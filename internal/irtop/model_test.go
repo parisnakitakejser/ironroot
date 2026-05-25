@@ -99,6 +99,27 @@ func TestRenderTextOverview(t *testing.T) {
 	}
 }
 
+func TestModelCAViewRendersHierarchy(t *testing.T) {
+	model := NewModel(nil, time.Second, ViewCAHealth)
+	model.state = stateLoaded
+	model.snapshot = Snapshot{
+		CA: CAStatus{ActiveIssuer: "int-web", ChainStatus: "valid"},
+		CAHierarchy: CAHierarchy{
+			Summary: CAHierarchySummary{RootCAs: 1, IntermediateCAs: 1, TokenPolicies: 1, Roles: 1},
+			Roots: []RootCAStatus{{
+				Name: "Production Root", Environment: "production", Fingerprint: "root-fingerprint", Status: "active",
+				Intermediates: []IntermediateCAStatus{{Name: "Web Intermediate", Owner: "platform", Namespace: "web", Status: "active", MaxTTL: "2160h0m0s", AllowedDNS: []string{"*.prod.example.com"}, ActiveCerts: 3, RenewalAllowed: true, Roles: []CARoleStatus{{Name: "issuer"}}, TokenPolicies: []CATokenPolicyStatus{{Name: "short-lived"}}}},
+			}},
+		},
+	}
+	out := model.View()
+	for _, want := range []string{"Trust hierarchy", "Production Root", "Web Intermediate", "policies=1 roles=1", "*.prod.example.com"} {
+		if !strings.Contains(out, want) {
+			t.Fatalf("expected CA view to contain %q:\n%s", want, out)
+		}
+	}
+}
+
 var errTestStartup = testError("boom")
 
 type testError string

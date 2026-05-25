@@ -1,0 +1,131 @@
+# Example declarative CA hierarchy model for multi-root IronRoot deployments.
+# This file documents the intended management shape; current server status APIs
+# expose matching metadata without storing private Root CA key material.
+
+roots:
+  production:
+    name: IronRoot Production Root CA
+    environment: production
+    trust_domain: prod.example.com
+    status: active
+    fingerprint: sha256:replace-with-production-root-fingerprint
+    not_after: 2046-01-01T00:00:00Z
+    intermediates:
+      platform-web:
+        name: Platform Web Issuer
+        owner: platform
+        namespace: web
+        status: active
+        fingerprint: sha256:replace-with-platform-web-intermediate
+        max_ttl: 2160h
+        allowed_dns:
+          - "*.prod.example.com"
+          - api.prod.example.com
+        allowed_usages:
+          - server
+          - client
+        require_approval: false
+        issuance_limit: 500
+        renewal_allowed: true
+
+      payments-services:
+        name: Payments Services Issuer
+        owner: payments
+        namespace: services
+        status: active
+        fingerprint: sha256:replace-with-payments-intermediate
+        max_ttl: 720h
+        allowed_dns:
+          - "*.payments.prod.example.com"
+        allowed_usages:
+          - server
+        require_approval: true
+        issuance_limit: 100
+        renewal_allowed: true
+
+  staging:
+    name: IronRoot Staging Root CA
+    environment: staging
+    trust_domain: staging.example.com
+    status: active
+    fingerprint: sha256:replace-with-staging-root-fingerprint
+    not_after: 2036-01-01T00:00:00Z
+    intermediates:
+      staging-shared:
+        name: Staging Shared Issuer
+        owner: platform
+        namespace: staging
+        status: active
+        fingerprint: sha256:replace-with-staging-intermediate
+        max_ttl: 168h
+        allowed_dns:
+          - "*.staging.example.com"
+        allowed_usages:
+          - server
+          - client
+        require_approval: false
+        issuance_limit: 1000
+        renewal_allowed: true
+
+  lab:
+    name: IronRoot Lab Root CA
+    environment: lab
+    trust_domain: lab.example.test
+    status: testing
+    fingerprint: sha256:replace-with-lab-root-fingerprint
+    not_after: 2031-01-01T00:00:00Z
+    intermediates:
+      sandbox:
+        name: Sandbox Issuer
+        owner: research
+        namespace: sandbox
+        status: testing
+        fingerprint: sha256:replace-with-sandbox-intermediate
+        max_ttl: 24h
+        allowed_dns:
+          - "*.sandbox.lab.example.test"
+        allowed_usages:
+          - server
+        require_approval: false
+        issuance_limit: 50
+        renewal_allowed: false
+
+rbac:
+  roles:
+    platform-web-issuer:
+      subject: team:platform
+      intermediate: platform-web
+      permissions:
+        - request
+        - renew
+
+    payments-approver:
+      subject: group:security-approvers
+      intermediate: payments-services
+      permissions:
+        - approve
+        - request
+        - revoke
+
+token_policies:
+  production-web-short-lived:
+    intermediate: platform-web
+    certificate_types:
+      - server
+    allowed_dns:
+      - "*.prod.example.com"
+    max_ttl: 24h
+    issuance_limit: 20
+    renewal_allowed: true
+    require_approval: false
+
+  payments-manual-approval:
+    intermediate: payments-services
+    certificate_types:
+      - server
+    allowed_dns:
+      - "*.payments.prod.example.com"
+    max_ttl: 12h
+    issuance_limit: 5
+    renewal_allowed: true
+    require_approval: true

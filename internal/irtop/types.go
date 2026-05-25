@@ -11,6 +11,7 @@ type Snapshot struct {
 	Tokens       []Token       `json:"tokens,omitempty"`
 	Security     Security      `json:"security,omitempty"`
 	Telemetry    Telemetry     `json:"telemetry,omitempty"`
+	CAHierarchy  CAHierarchy   `json:"ca_hierarchy,omitempty"`
 	Audit        []AuditEvent  `json:"audit,omitempty"`
 	UpdatedAt    time.Time     `json:"updated_at"`
 }
@@ -85,6 +86,77 @@ type CAStatus struct {
 	RetiredIssuers          int       `json:"retired_issuers"`
 	ChainStatus             string    `json:"chain_status"`
 	Warnings                []string  `json:"warnings"`
+}
+
+type CAHierarchy struct {
+	Roots          []RootCAStatus     `json:"roots"`
+	Summary        CAHierarchySummary `json:"summary"`
+	Warnings       []string           `json:"warnings,omitempty"`
+	LegacyFallback bool               `json:"legacy_fallback"`
+}
+
+type CAHierarchySummary struct {
+	RootCAs          int `json:"root_cas"`
+	IntermediateCAs  int `json:"intermediate_cas"`
+	ActiveIssuers    int `json:"active_issuers"`
+	DisabledIssuers  int `json:"disabled_issuers"`
+	RetiredIssuers   int `json:"retired_issuers"`
+	TokenPolicies    int `json:"token_policies"`
+	Roles            int `json:"roles"`
+	PendingApprovals int `json:"pending_approvals"`
+}
+
+type RootCAStatus struct {
+	ID            string                 `json:"id"`
+	Name          string                 `json:"name"`
+	Environment   string                 `json:"environment"`
+	Fingerprint   string                 `json:"fingerprint"`
+	Status        string                 `json:"status"`
+	TrustDomain   string                 `json:"trust_domain,omitempty"`
+	NotBefore     time.Time              `json:"not_before"`
+	NotAfter      time.Time              `json:"not_after"`
+	Intermediates []IntermediateCAStatus `json:"intermediates"`
+}
+
+type IntermediateCAStatus struct {
+	ID              string                `json:"id"`
+	Name            string                `json:"name"`
+	Environment     string                `json:"environment"`
+	Owner           string                `json:"owner,omitempty"`
+	Namespace       string                `json:"namespace,omitempty"`
+	Fingerprint     string                `json:"fingerprint"`
+	Status          string                `json:"status"`
+	MaxTTL          string                `json:"max_ttl"`
+	AllowedDNS      []string              `json:"allowed_dns,omitempty"`
+	AllowedUsages   []string              `json:"allowed_usages,omitempty"`
+	RequireApproval bool                  `json:"require_approval"`
+	IssuanceLimit   int                   `json:"issuance_limit"`
+	RenewalAllowed  bool                  `json:"renewal_allowed"`
+	NotBefore       time.Time             `json:"not_before"`
+	NotAfter        time.Time             `json:"not_after"`
+	ActiveCerts     int                   `json:"active_certs"`
+	RevokedCerts    int                   `json:"revoked_certs"`
+	Roles           []CARoleStatus        `json:"roles,omitempty"`
+	TokenPolicies   []CATokenPolicyStatus `json:"token_policies,omitempty"`
+}
+
+type CARoleStatus struct {
+	ID          string   `json:"id"`
+	Name        string   `json:"name"`
+	Subject     string   `json:"subject"`
+	Permissions []string `json:"permissions"`
+}
+
+type CATokenPolicyStatus struct {
+	ID               string    `json:"id"`
+	Name             string    `json:"name"`
+	CertificateTypes []string  `json:"certificate_types"`
+	AllowedDNS       []string  `json:"allowed_dns,omitempty"`
+	MaxTTL           string    `json:"max_ttl"`
+	IssuanceLimit    int       `json:"issuance_limit"`
+	RenewalAllowed   bool      `json:"renewal_allowed"`
+	RequireApproval  bool      `json:"require_approval"`
+	ExpiresAt        time.Time `json:"expires_at"`
 }
 
 type Certificate struct {

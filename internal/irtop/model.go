@@ -378,6 +378,7 @@ func snapshotEmpty(snapshot Snapshot) bool {
 		len(snapshot.Enrollments) == 0 &&
 		len(snapshot.Tokens) == 0 &&
 		snapshot.CA.ChainStatus == "" &&
+		len(snapshot.CAHierarchy.Roots) == 0 &&
 		snapshot.Security.Status == "" &&
 		snapshot.Telemetry.ExporterStatus == "" &&
 		len(snapshot.Audit) == 0
@@ -457,7 +458,53 @@ func (m Model) caView() string {
 	for _, warning := range ca.Warnings {
 		lines = append(lines, warnStyle.Render("warning: "+warning))
 	}
+	if len(m.snapshot.CAHierarchy.Roots) > 0 {
+		lines = append(lines, "")
+		lines = append(lines, m.caHierarchyTree()...)
+	} else {
+		for _, warning := range m.snapshot.CAHierarchy.Warnings {
+			lines = append(lines, warnStyle.Render("hierarchy: "+warning))
+		}
+	}
 	return panel(m.contentWidth(), "CA Health", strings.Join(lines, "\n"))
+}
+
+func (m Model) caHierarchyTree() []string {
+	h := m.snapshot.CAHierarchy
+	lines := []string{
+		tableHeader("Trust hierarchy"),
+		metricLine("Roots", fmt.Sprint(h.Summary.RootCAs), "Intermediates", fmt.Sprint(h.Summary.IntermediateCAs)),
+		metricLine("Policies", fmt.Sprint(h.Summary.TokenPolicies), "RBAC roles", fmt.Sprint(h.Summary.Roles)),
+	}
+	if h.LegacyFallback {
+		lines = append(lines, warnStyle.Render("legacy ca_config projection"))
+	}
+	for _, root := range h.Roots {
+		lines = append(lines, fmt.Sprintf("%s %s %s", statusBadge(root.Status), titleStyle.Render(root.Name), subtleStyle.Render("["+empty(root.Environment, "unknown")+"]")))
+		lines = append(lines, subtleStyle.Render("   root "+short(root.Fingerprint)+"  expires "+date(root.NotAfter)+"  trust "+empty(root.TrustDomain, "n/a")))
+		for i, intermediate := range root.Intermediates {
+			branch := "|-"
+			if i == len(root.Intermediates)-1 {
+				branch = "`-"
+			}
+			owner := empty(intermediate.Owner, "unowned")
+			if intermediate.Namespace != "" {
+				owner += "/" + intermediate.Namespace
+			}
+			lines = append(lines, fmt.Sprintf("   %s %s %s %s", branch, statusBadge(intermediate.Status), intermediate.Name, subtleStyle.Render(owner)))
+			lines = append(lines, fmt.Sprintf("      certs active=%d revoked=%d ttl=%s renew=%s approval=%s", intermediate.ActiveCerts, intermediate.RevokedCerts, empty(intermediate.MaxTTL, "n/a"), boolWord(intermediate.RenewalAllowed), boolWord(intermediate.RequireApproval)))
+			if len(intermediate.AllowedDNS) > 0 {
+				lines = append(lines, subtleStyle.Render("      dns "+truncate(strings.Join(intermediate.AllowedDNS, ", "), 72)))
+			}
+			if len(intermediate.TokenPolicies) > 0 || len(intermediate.Roles) > 0 {
+				lines = append(lines, subtleStyle.Render(fmt.Sprintf("      access policies=%d roles=%d", len(intermediate.TokenPolicies), len(intermediate.Roles))))
+			}
+		}
+	}
+	for _, warning := range h.Warnings {
+		lines = append(lines, warnStyle.Render("warning: "+warning))
+	}
+	return lines
 }
 
 func (m Model) securityView() string {
@@ -592,6 +639,13 @@ func boolBadge(v bool) string {
 		return okStyle.Render("on")
 	}
 	return subtleStyle.Render("off")
+}
+
+func boolWord(v bool) string {
+	if v {
+		return "yes"
+	}
+	return "no"
 }
 
 func warnNumber(v int) string {

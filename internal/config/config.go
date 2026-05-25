@@ -13,6 +13,7 @@ type Config struct {
 	Server    ServerConfig    `mapstructure:"server" yaml:"server"`
 	Database  DatabaseConfig  `mapstructure:"database" yaml:"database"`
 	PKI       PKIConfig       `mapstructure:"pki" yaml:"pki"`
+	RBAC      RBACConfig      `mapstructure:"rbac" yaml:"rbac"`
 	Telemetry TelemetryConfig `mapstructure:"telemetry" yaml:"telemetry"`
 	Log       LogConfig       `mapstructure:"log" yaml:"log"`
 }
@@ -40,6 +41,12 @@ type PKIConfig struct {
 	IntermediateKeyPass  string        `mapstructure:"intermediate_key_pass" yaml:"intermediate_key_pass"`
 	DefaultLifetime      time.Duration `mapstructure:"default_lifetime" yaml:"default_lifetime"`
 	RenewBefore          time.Duration `mapstructure:"renew_before" yaml:"renew_before"`
+}
+
+type RBACConfig struct {
+	Enabled bool     `mapstructure:"enabled" yaml:"enabled"`
+	Mode    string   `mapstructure:"mode" yaml:"mode"`
+	Paths   []string `mapstructure:"paths" yaml:"paths"`
 }
 
 type TelemetryConfig struct {
@@ -96,6 +103,7 @@ func Default() Config {
 			DefaultLifetime:      90 * 24 * time.Hour,
 			RenewBefore:          30 * 24 * time.Hour,
 		},
+		RBAC: RBACConfig{Enabled: false, Mode: "file"},
 		Telemetry: TelemetryConfig{
 			Enabled:               false,
 			ServiceName:           "ironroot-server",
@@ -218,6 +226,9 @@ func flatten(cfg Config, prefix string) map[string]any {
 		"pki.intermediate_key_pass":             cfg.PKI.IntermediateKeyPass,
 		"pki.default_lifetime":                  cfg.PKI.DefaultLifetime,
 		"pki.renew_before":                      cfg.PKI.RenewBefore,
+		"rbac.enabled":                          cfg.RBAC.Enabled,
+		"rbac.mode":                             cfg.RBAC.Mode,
+		"rbac.paths":                            cfg.RBAC.Paths,
 		"telemetry.enabled":                     cfg.Telemetry.Enabled,
 		"telemetry.service_name":                cfg.Telemetry.ServiceName,
 		"telemetry.service_version":             cfg.Telemetry.ServiceVersion,

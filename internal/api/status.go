@@ -1,6 +1,7 @@
 package api
 
 import (
+	"context"
 	"crypto/sha256"
 	"crypto/x509"
 	"encoding/hex"
@@ -85,6 +86,77 @@ type caStatus struct {
 	Warnings                []string  `json:"warnings"`
 }
 
+type caHierarchyStatus struct {
+	Roots          []rootCAStatus     `json:"roots"`
+	Summary        caHierarchySummary `json:"summary"`
+	Warnings       []string           `json:"warnings,omitempty"`
+	LegacyFallback bool               `json:"legacy_fallback"`
+}
+
+type caHierarchySummary struct {
+	RootCAs          int `json:"root_cas"`
+	IntermediateCAs  int `json:"intermediate_cas"`
+	ActiveIssuers    int `json:"active_issuers"`
+	DisabledIssuers  int `json:"disabled_issuers"`
+	RetiredIssuers   int `json:"retired_issuers"`
+	TokenPolicies    int `json:"token_policies"`
+	Roles            int `json:"roles"`
+	PendingApprovals int `json:"pending_approvals"`
+}
+
+type rootCAStatus struct {
+	ID            string                 `json:"id"`
+	Name          string                 `json:"name"`
+	Environment   string                 `json:"environment"`
+	Fingerprint   string                 `json:"fingerprint"`
+	Status        string                 `json:"status"`
+	TrustDomain   string                 `json:"trust_domain,omitempty"`
+	NotBefore     time.Time              `json:"not_before"`
+	NotAfter      time.Time              `json:"not_after"`
+	Intermediates []intermediateCAStatus `json:"intermediates"`
+}
+
+type intermediateCAStatus struct {
+	ID              string                `json:"id"`
+	Name            string                `json:"name"`
+	Environment     string                `json:"environment"`
+	Owner           string                `json:"owner,omitempty"`
+	Namespace       string                `json:"namespace,omitempty"`
+	Fingerprint     string                `json:"fingerprint"`
+	Status          string                `json:"status"`
+	MaxTTL          string                `json:"max_ttl"`
+	AllowedDNS      []string              `json:"allowed_dns,omitempty"`
+	AllowedUsages   []string              `json:"allowed_usages,omitempty"`
+	RequireApproval bool                  `json:"require_approval"`
+	IssuanceLimit   int                   `json:"issuance_limit"`
+	RenewalAllowed  bool                  `json:"renewal_allowed"`
+	NotBefore       time.Time             `json:"not_before"`
+	NotAfter        time.Time             `json:"not_after"`
+	ActiveCerts     int                   `json:"active_certs"`
+	RevokedCerts    int                   `json:"revoked_certs"`
+	Roles           []caRoleStatus        `json:"roles,omitempty"`
+	TokenPolicies   []caTokenPolicyStatus `json:"token_policies,omitempty"`
+}
+
+type caRoleStatus struct {
+	ID          string   `json:"id"`
+	Name        string   `json:"name"`
+	Subject     string   `json:"subject"`
+	Permissions []string `json:"permissions"`
+}
+
+type caTokenPolicyStatus struct {
+	ID               string    `json:"id"`
+	Name             string    `json:"name"`
+	CertificateTypes []string  `json:"certificate_types"`
+	AllowedDNS       []string  `json:"allowed_dns,omitempty"`
+	MaxTTL           string    `json:"max_ttl"`
+	IssuanceLimit    int       `json:"issuance_limit"`
+	RenewalAllowed   bool      `json:"renewal_allowed"`
+	RequireApproval  bool      `json:"require_approval"`
+	ExpiresAt        time.Time `json:"expires_at"`
+}
+
 type certificateStatusItem struct {
 	Serial        string    `json:"serial"`
 	DNSNames      []string  `json:"dns_names"`
@@ -150,6 +222,15 @@ func (h handler) statusServer(w http.ResponseWriter, r *http.Request) {
 
 func (h handler) statusCA(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, h.caStatus())
+}
+
+func (h handler) statusCAHierarchy(w http.ResponseWriter, r *http.Request) {
+	hierarchy, err := h.caHierarchyStatus(r.Context())
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, hierarchy)
 }
 
 func (h handler) statusCertificates(w http.ResponseWriter, r *http.Request) {
@@ -281,6 +362,145 @@ func (h handler) caStatus() caStatus {
 		status.Warnings = append(status.Warnings, "CA material is not configured")
 	}
 	return status
+}
+
+func (h handler) caHierarchyStatus(ctx context.Context) (caHierarchyStatus, error) {
+	roots, err := h.dep.Store.ListRootCAs(ctx)
+	if err != nil {
+		return caHierarchyStatus{}, err
+	}
+	intermediates, err := h.dep.Store.ListIntermediateCAs(ctx)
+	if err != nil {
+		return caHierarchyStatus{}, err
+	}
+	roles, err := h.dep.Store.ListCARoles(ctx)
+	if err != nil {
+		return caHierarchyStatus{}, err
+	}
+	policies, err := h.dep.Store.ListCATokenPolicies(ctx)
+	if err != nil {
+		return caHierarchyStatus{}, err
+	}
+	certs, _ := h.dep.Store.ListIssuedCertificates(ctx)
+	if len(roots) == 0 && len(intermediates) == 0 {
+		return h.legacyCAHierarchy(ctx, certs)
+	}
+	return buildCAHierarchy(roots, intermediates, roles, policies, certs), nil
+}
+
+func (h handler) legacyCAHierarchy(ctx context.Context, certs []db.IssuedCertificate) (caHierarchyStatus, error) {
+	configs, err := h.dep.Store.ListCAConfigs(ctx)
+	if err != nil || len(configs) == 0 {
+		return caHierarchyStatus{
+			Summary:  caHierarchySummary{},
+			Warnings: []string{"No multi-root CA hierarchy metadata has been registered yet."},
+		}, nil
+	}
+	roots := make([]db.RootCA, 0, len(configs))
+	intermediates := make([]db.IntermediateCA, 0, len(configs))
+	for _, cfg := range configs {
+		rootID := "legacy-root-" + cfg.CAID
+		roots = append(roots, db.RootCA{
+			ID:          rootID,
+			Name:        cfg.Name + " Root",
+			Environment: "legacy",
+			Fingerprint: cfg.RootFingerprint,
+			Status:      cfg.Status,
+			CreatedAt:   cfg.CreatedAt,
+			NotBefore:   cfg.NotBefore,
+			NotAfter:    cfg.NotAfter,
+		})
+		intermediates = append(intermediates, db.IntermediateCA{
+			ID:             cfg.CAID,
+			RootID:         rootID,
+			Name:           cfg.Name,
+			Environment:    "legacy",
+			Fingerprint:    cfg.IntermediateFingerprint,
+			Status:         cfg.Status,
+			RenewalAllowed: true,
+			CreatedAt:      cfg.CreatedAt,
+			NotBefore:      cfg.NotBefore,
+			NotAfter:       cfg.NotAfter,
+		})
+	}
+	hierarchy := buildCAHierarchy(roots, intermediates, nil, nil, certs)
+	hierarchy.LegacyFallback = true
+	hierarchy.Warnings = append(hierarchy.Warnings, "Rendered legacy ca_config rows as a one-root-per-issuer hierarchy.")
+	return hierarchy, nil
+}
+
+func buildCAHierarchy(roots []db.RootCA, intermediates []db.IntermediateCA, roles []db.CARole, policies []db.CATokenPolicy, certs []db.IssuedCertificate) caHierarchyStatus {
+	rootItems := make([]rootCAStatus, 0, len(roots))
+	rootIndex := map[string]int{}
+	for _, root := range roots {
+		rootIndex[root.ID] = len(rootItems)
+		rootItems = append(rootItems, rootCAStatus{
+			ID:            root.ID,
+			Name:          root.Name,
+			Environment:   root.Environment,
+			Fingerprint:   root.Fingerprint,
+			Status:        root.Status,
+			TrustDomain:   root.TrustDomain,
+			NotBefore:     root.NotBefore,
+			NotAfter:      root.NotAfter,
+			Intermediates: []intermediateCAStatus{},
+		})
+	}
+	roleByIntermediate := map[string][]caRoleStatus{}
+	for _, role := range roles {
+		roleByIntermediate[role.IntermediateID] = append(roleByIntermediate[role.IntermediateID], caRoleStatus{ID: role.ID, Name: role.Name, Subject: role.Subject, Permissions: splitNames(role.Permissions)})
+	}
+	policyByIntermediate := map[string][]caTokenPolicyStatus{}
+	for _, policy := range policies {
+		policyByIntermediate[policy.IntermediateID] = append(policyByIntermediate[policy.IntermediateID], caTokenPolicyStatus{
+			ID: policy.ID, Name: policy.Name, CertificateTypes: splitNames(policy.CertificateTypes), AllowedDNS: splitNames(policy.AllowedDNS),
+			MaxTTL: policy.MaxTTL.String(), IssuanceLimit: policy.IssuanceLimit, RenewalAllowed: policy.RenewalAllowed, RequireApproval: policy.RequireApproval, ExpiresAt: policy.ExpiresAt,
+		})
+	}
+	activeCerts, revokedCerts := certificateCountsByCA(certs)
+	var summary caHierarchySummary
+	summary.RootCAs = len(rootItems)
+	summary.IntermediateCAs = len(intermediates)
+	summary.TokenPolicies = len(policies)
+	summary.Roles = len(roles)
+	for _, intermediate := range intermediates {
+		item := intermediateCAStatus{
+			ID: intermediate.ID, Name: intermediate.Name, Environment: intermediate.Environment, Owner: intermediate.Owner, Namespace: intermediate.Namespace,
+			Fingerprint: intermediate.Fingerprint, Status: intermediate.Status, MaxTTL: intermediate.MaxTTL.String(), AllowedDNS: splitNames(intermediate.AllowedDNS),
+			AllowedUsages: splitNames(intermediate.AllowedUsages), RequireApproval: intermediate.RequireApproval, IssuanceLimit: intermediate.IssuanceLimit,
+			RenewalAllowed: intermediate.RenewalAllowed, NotBefore: intermediate.NotBefore, NotAfter: intermediate.NotAfter, ActiveCerts: activeCerts[intermediate.ID],
+			RevokedCerts: revokedCerts[intermediate.ID], Roles: roleByIntermediate[intermediate.ID], TokenPolicies: policyByIntermediate[intermediate.ID],
+		}
+		switch intermediate.Status {
+		case "active":
+			summary.ActiveIssuers++
+		case "disabled":
+			summary.DisabledIssuers++
+		case "retired":
+			summary.RetiredIssuers++
+		}
+		if intermediate.RequireApproval {
+			summary.PendingApprovals++
+		}
+		if idx, ok := rootIndex[intermediate.RootID]; ok {
+			rootItems[idx].Intermediates = append(rootItems[idx].Intermediates, item)
+		}
+	}
+	return caHierarchyStatus{Roots: rootItems, Summary: summary}
+}
+
+func certificateCountsByCA(certs []db.IssuedCertificate) (map[string]int, map[string]int) {
+	active := map[string]int{}
+	revoked := map[string]int{}
+	now := time.Now().UTC()
+	for _, cert := range certs {
+		if cert.RevokedAt != nil || now.After(cert.NotAfter) {
+			revoked[cert.CAID]++
+			continue
+		}
+		active[cert.CAID]++
+	}
+	return active, revoked
 }
 
 func summarizeCertificates(certs []db.IssuedCertificate, renewBefore time.Duration) certificateSummary {

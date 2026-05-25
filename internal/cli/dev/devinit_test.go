@@ -50,7 +50,7 @@ func TestDevInitCreatesWorkspaceAndGeneratedConfig(t *testing.T) {
 	}
 
 	workspace := filepath.Join(base, ".localdev")
-	for _, rel := range []string{"config", "data", "pki", "pki/root", "pki/intermediate", "certs", "logs", "tmp"} {
+	for _, rel := range []string{"config", "config/rbac", "data", "pki", "pki/root", "pki/intermediate", "certs", "logs", "tmp"} {
 		if info, err := os.Stat(filepath.Join(workspace, rel)); err != nil || !info.IsDir() {
 			t.Fatalf("missing directory %s: %v", rel, err)
 		}
@@ -65,6 +65,12 @@ func TestDevInitCreatesWorkspaceAndGeneratedConfig(t *testing.T) {
 	}
 	if !strings.Contains(string(config), filepath.ToSlash(filepath.Join(workspace, "pki", "root", "root-ca.crt"))) {
 		t.Fatalf("config does not contain generated absolute root path:\n%s", config)
+	}
+	if !strings.Contains(string(config), filepath.ToSlash(filepath.Join(workspace, "config", "rbac", "*.yaml"))) {
+		t.Fatalf("config does not contain generated absolute RBAC path:\n%s", config)
+	}
+	if _, err := os.Stat(filepath.Join(workspace, "config", "rbac", "local-rbac.yaml")); err != nil {
+		t.Fatalf("missing generated RBAC manifest: %v", err)
 	}
 	if !strings.Contains(out.String(), "Base directory:") {
 		t.Fatalf("unexpected output: %s", out.String())

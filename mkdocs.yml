@@ -60,6 +60,7 @@ nav:
           - Certificate Chain: pki-concepts/certificate-chain.md
           - Root CA: architecture/offline-root-ca.md
           - Intermediate CA: architecture/online-intermediate-ca.md
+          - Multi-Root CA: architecture/multi-root-ca.md
           - Certificate Lifecycle: architecture/certificate-lifecycle.md
           - Root Rotation: architecture/root-rotation.md
       - Platform Components:
@@ -177,7 +178,13 @@ nav:
   - Contributing:
       - contributing/index.md
       - Start Here:
-          - Local Development: contributing/local-development.md
+          - Local Development:
+              - Overview: contributing/local-development.md
+              - Up And Running: contributing/local-development-up-and-running.md
+              - Multi-Root CA Development: contributing/local-development-multi-root-ca.md
+              - RBAC Development: contributing/local-development-rbac.md
+              - Testing And Verification: contributing/local-development-testing.md
+              - Troubleshooting: contributing/local-development-troubleshooting.md
           - Platform Setup: contributing/platform-setup.md
       - Contributor Workflow:
           - Project Structure: contributing/project-structure.md

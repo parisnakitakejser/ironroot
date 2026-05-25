@@ -17,5 +17,12 @@
 | POST | `/v1/certificates/revoke` | Revoke certificate metadata |
 | GET | `/v1/certificates/status/{serial}` | Certificate status |
 | GET | `/v1/audit` | Audit log entries |
+| GET | `/v1/status/overview` | Server, CA, certificate, enrollment, security, and telemetry summary |
+| GET | `/v1/status/ca` | Active CA health summary |
+| GET | `/v1/status/ca-hierarchy` | Multi-root and Intermediate CA hierarchy metadata |
+| GET | `/v1/status/certificates` | Certificate status list |
+| GET | `/v1/status/tokens` | Bootstrap token status list without token secrets |
 
 Clients propagate W3C Trace Context headers so the server can continue command traces.
+
+`/v1/status/ca-hierarchy` is intended for monitoring and operator UI surfaces such as `irtop`. It returns Root CA, Intermediate CA, RBAC role, and token policy metadata only. It does not expose Root private keys, Intermediate private keys, bootstrap token secrets, or token hashes.

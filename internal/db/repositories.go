@@ -298,3 +298,151 @@ func (s *SQLStore) ListCAConfigs(ctx context.Context) ([]CAConfig, error) {
 	telemetry.EndSpan(span, err)
 	return out, err
 }
+
+func (s *SQLStore) UpsertRootCA(ctx context.Context, c RootCA) error {
+	ctx, span := telemetry.StartSpan(ctx, "db.upsert_root_ca")
+	started := time.Now()
+	_, err := s.db.ExecContext(ctx, `INSERT INTO root_cas(id, name, environment, fingerprint, status, trust_domain, created_at, not_before, not_after)
+		VALUES(?,?,?,?,?,?,?,?,?)
+		ON CONFLICT(id) DO UPDATE SET name=excluded.name, environment=excluded.environment, fingerprint=excluded.fingerprint, status=excluded.status, trust_domain=excluded.trust_domain, not_before=excluded.not_before, not_after=excluded.not_after`,
+		c.ID, c.Name, c.Environment, c.Fingerprint, c.Status, c.TrustDomain, c.CreatedAt, c.NotBefore, c.NotAfter)
+	telemetry.RecordDatabase(ctx, "upsert_root_ca", started, err)
+	telemetry.EndSpan(span, err)
+	return err
+}
+
+func (s *SQLStore) ListRootCAs(ctx context.Context) ([]RootCA, error) {
+	ctx, span := telemetry.StartSpan(ctx, "db.list_root_cas")
+	started := time.Now()
+	rows, err := s.db.QueryContext(ctx, `SELECT id, name, environment, fingerprint, status, trust_domain, created_at, not_before, not_after FROM root_cas ORDER BY environment, name`)
+	if err != nil {
+		telemetry.RecordDatabase(ctx, "list_root_cas", started, err)
+		telemetry.EndSpan(span, err)
+		return nil, err
+	}
+	defer rows.Close()
+	var out []RootCA
+	for rows.Next() {
+		var c RootCA
+		if err := rows.Scan(&c.ID, &c.Name, &c.Environment, &c.Fingerprint, &c.Status, &c.TrustDomain, &c.CreatedAt, &c.NotBefore, &c.NotAfter); err != nil {
+			return nil, err
+		}
+		out = append(out, c)
+	}
+	err = rows.Err()
+	telemetry.RecordDatabase(ctx, "list_root_cas", started, err)
+	telemetry.EndSpan(span, err)
+	return out, err
+}
+
+func (s *SQLStore) UpsertIntermediateCA(ctx context.Context, c IntermediateCA) error {
+	ctx, span := telemetry.StartSpan(ctx, "db.upsert_intermediate_ca")
+	started := time.Now()
+	_, err := s.db.ExecContext(ctx, `INSERT INTO intermediate_cas(id, root_id, name, environment, owner, namespace, fingerprint, status, max_ttl_seconds, allowed_dns, allowed_usages, require_approval, issuance_limit, renewal_allowed, created_at, not_before, not_after)
+		VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+		ON CONFLICT(id) DO UPDATE SET root_id=excluded.root_id, name=excluded.name, environment=excluded.environment, owner=excluded.owner, namespace=excluded.namespace, fingerprint=excluded.fingerprint, status=excluded.status, max_ttl_seconds=excluded.max_ttl_seconds, allowed_dns=excluded.allowed_dns, allowed_usages=excluded.allowed_usages, require_approval=excluded.require_approval, issuance_limit=excluded.issuance_limit, renewal_allowed=excluded.renewal_allowed, not_before=excluded.not_before, not_after=excluded.not_after`,
+		c.ID, c.RootID, c.Name, c.Environment, c.Owner, c.Namespace, c.Fingerprint, c.Status, int64(c.MaxTTL.Seconds()), c.AllowedDNS, c.AllowedUsages, c.RequireApproval, c.IssuanceLimit, c.RenewalAllowed, c.CreatedAt, c.NotBefore, c.NotAfter)
+	telemetry.RecordDatabase(ctx, "upsert_intermediate_ca", started, err)
+	telemetry.EndSpan(span, err)
+	return err
+}
+
+func (s *SQLStore) ListIntermediateCAs(ctx context.Context) ([]IntermediateCA, error) {
+	ctx, span := telemetry.StartSpan(ctx, "db.list_intermediate_cas")
+	started := time.Now()
+	rows, err := s.db.QueryContext(ctx, `SELECT id, root_id, name, environment, owner, namespace, fingerprint, status, max_ttl_seconds, allowed_dns, allowed_usages, require_approval, issuance_limit, renewal_allowed, created_at, not_before, not_after FROM intermediate_cas ORDER BY environment, name`)
+	if err != nil {
+		telemetry.RecordDatabase(ctx, "list_intermediate_cas", started, err)
+		telemetry.EndSpan(span, err)
+		return nil, err
+	}
+	defer rows.Close()
+	var out []IntermediateCA
+	for rows.Next() {
+		var c IntermediateCA
+		var maxTTLSeconds int64
+		if err := rows.Scan(&c.ID, &c.RootID, &c.Name, &c.Environment, &c.Owner, &c.Namespace, &c.Fingerprint, &c.Status, &maxTTLSeconds, &c.AllowedDNS, &c.AllowedUsages, &c.RequireApproval, &c.IssuanceLimit, &c.RenewalAllowed, &c.CreatedAt, &c.NotBefore, &c.NotAfter); err != nil {
+			return nil, err
+		}
+		c.MaxTTL = time.Duration(maxTTLSeconds) * time.Second
+		out = append(out, c)
+	}
+	err = rows.Err()
+	telemetry.RecordDatabase(ctx, "list_intermediate_cas", started, err)
+	telemetry.EndSpan(span, err)
+	return out, err
+}
+
+func (s *SQLStore) UpsertCARole(ctx context.Context, r CARole) error {
+	ctx, span := telemetry.StartSpan(ctx, "db.upsert_ca_role")
+	started := time.Now()
+	_, err := s.db.ExecContext(ctx, `INSERT INTO ca_roles(id, name, subject, intermediate_id, permissions, created_at)
+		VALUES(?,?,?,?,?,?)
+		ON CONFLICT(id) DO UPDATE SET name=excluded.name, subject=excluded.subject, intermediate_id=excluded.intermediate_id, permissions=excluded.permissions`,
+		r.ID, r.Name, r.Subject, r.IntermediateID, r.Permissions, r.CreatedAt)
+	telemetry.RecordDatabase(ctx, "upsert_ca_role", started, err)
+	telemetry.EndSpan(span, err)
+	return err
+}
+
+func (s *SQLStore) ListCARoles(ctx context.Context) ([]CARole, error) {
+	ctx, span := telemetry.StartSpan(ctx, "db.list_ca_roles")
+	started := time.Now()
+	rows, err := s.db.QueryContext(ctx, `SELECT id, name, subject, intermediate_id, permissions, created_at FROM ca_roles ORDER BY name`)
+	if err != nil {
+		telemetry.RecordDatabase(ctx, "list_ca_roles", started, err)
+		telemetry.EndSpan(span, err)
+		return nil, err
+	}
+	defer rows.Close()
+	var out []CARole
+	for rows.Next() {
+		var r CARole
+		if err := rows.Scan(&r.ID, &r.Name, &r.Subject, &r.IntermediateID, &r.Permissions, &r.CreatedAt); err != nil {
+			return nil, err
+		}
+		out = append(out, r)
+	}
+	err = rows.Err()
+	telemetry.RecordDatabase(ctx, "list_ca_roles", started, err)
+	telemetry.EndSpan(span, err)
+	return out, err
+}
+
+func (s *SQLStore) UpsertCATokenPolicy(ctx context.Context, p CATokenPolicy) error {
+	ctx, span := telemetry.StartSpan(ctx, "db.upsert_ca_token_policy")
+	started := time.Now()
+	_, err := s.db.ExecContext(ctx, `INSERT INTO ca_token_policies(id, name, intermediate_id, certificate_types, allowed_dns, max_ttl_seconds, issuance_limit, renewal_allowed, require_approval, created_at, expires_at)
+		VALUES(?,?,?,?,?,?,?,?,?,?,?)
+		ON CONFLICT(id) DO UPDATE SET name=excluded.name, intermediate_id=excluded.intermediate_id, certificate_types=excluded.certificate_types, allowed_dns=excluded.allowed_dns, max_ttl_seconds=excluded.max_ttl_seconds, issuance_limit=excluded.issuance_limit, renewal_allowed=excluded.renewal_allowed, require_approval=excluded.require_approval, expires_at=excluded.expires_at`,
+		p.ID, p.Name, p.IntermediateID, p.CertificateTypes, p.AllowedDNS, int64(p.MaxTTL.Seconds()), p.IssuanceLimit, p.RenewalAllowed, p.RequireApproval, p.CreatedAt, p.ExpiresAt)
+	telemetry.RecordDatabase(ctx, "upsert_ca_token_policy", started, err)
+	telemetry.EndSpan(span, err)
+	return err
+}
+
+func (s *SQLStore) ListCATokenPolicies(ctx context.Context) ([]CATokenPolicy, error) {
+	ctx, span := telemetry.StartSpan(ctx, "db.list_ca_token_policies")
+	started := time.Now()
+	rows, err := s.db.QueryContext(ctx, `SELECT id, name, intermediate_id, certificate_types, allowed_dns, max_ttl_seconds, issuance_limit, renewal_allowed, require_approval, created_at, expires_at FROM ca_token_policies ORDER BY name`)
+	if err != nil {
+		telemetry.RecordDatabase(ctx, "list_ca_token_policies", started, err)
+		telemetry.EndSpan(span, err)
+		return nil, err
+	}
+	defer rows.Close()
+	var out []CATokenPolicy
+	for rows.Next() {
+		var p CATokenPolicy
+		var maxTTLSeconds int64
+		if err := rows.Scan(&p.ID, &p.Name, &p.IntermediateID, &p.CertificateTypes, &p.AllowedDNS, &maxTTLSeconds, &p.IssuanceLimit, &p.RenewalAllowed, &p.RequireApproval, &p.CreatedAt, &p.ExpiresAt); err != nil {
+			return nil, err
+		}
+		p.MaxTTL = time.Duration(maxTTLSeconds) * time.Second
+		out = append(out, p)
+	}
+	err = rows.Err()
+	telemetry.RecordDatabase(ctx, "list_ca_token_policies", started, err)
+	telemetry.EndSpan(span, err)
+	return out, err
+}

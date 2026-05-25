@@ -3,6 +3,60 @@ package db
 import "context"
 
 var migrations = []string{
+	`CREATE TABLE IF NOT EXISTS root_cas (
+		id TEXT PRIMARY KEY,
+		name TEXT NOT NULL,
+		environment TEXT NOT NULL,
+		fingerprint TEXT NOT NULL UNIQUE,
+		status TEXT NOT NULL CHECK(status IN ('active','disabled','retired','testing')),
+		trust_domain TEXT,
+		created_at TIMESTAMP NOT NULL,
+		not_before TIMESTAMP NOT NULL,
+		not_after TIMESTAMP NOT NULL
+	);`,
+	`CREATE TABLE IF NOT EXISTS intermediate_cas (
+		id TEXT PRIMARY KEY,
+		root_id TEXT NOT NULL,
+		name TEXT NOT NULL,
+		environment TEXT NOT NULL,
+		owner TEXT,
+		namespace TEXT,
+		fingerprint TEXT NOT NULL UNIQUE,
+		status TEXT NOT NULL CHECK(status IN ('active','disabled','retired','pending','testing')),
+		max_ttl_seconds INTEGER NOT NULL DEFAULT 0,
+		allowed_dns TEXT,
+		allowed_usages TEXT,
+		require_approval BOOLEAN NOT NULL DEFAULT 0,
+		issuance_limit INTEGER NOT NULL DEFAULT 0,
+		renewal_allowed BOOLEAN NOT NULL DEFAULT 1,
+		created_at TIMESTAMP NOT NULL,
+		not_before TIMESTAMP NOT NULL,
+		not_after TIMESTAMP NOT NULL,
+		FOREIGN KEY(root_id) REFERENCES root_cas(id)
+	);`,
+	`CREATE TABLE IF NOT EXISTS ca_roles (
+		id TEXT PRIMARY KEY,
+		name TEXT NOT NULL,
+		subject TEXT NOT NULL,
+		intermediate_id TEXT NOT NULL,
+		permissions TEXT NOT NULL,
+		created_at TIMESTAMP NOT NULL,
+		FOREIGN KEY(intermediate_id) REFERENCES intermediate_cas(id)
+	);`,
+	`CREATE TABLE IF NOT EXISTS ca_token_policies (
+		id TEXT PRIMARY KEY,
+		name TEXT NOT NULL,
+		intermediate_id TEXT NOT NULL,
+		certificate_types TEXT NOT NULL,
+		allowed_dns TEXT,
+		max_ttl_seconds INTEGER NOT NULL DEFAULT 0,
+		issuance_limit INTEGER NOT NULL DEFAULT 0,
+		renewal_allowed BOOLEAN NOT NULL DEFAULT 0,
+		require_approval BOOLEAN NOT NULL DEFAULT 0,
+		created_at TIMESTAMP NOT NULL,
+		expires_at TIMESTAMP NOT NULL,
+		FOREIGN KEY(intermediate_id) REFERENCES intermediate_cas(id)
+	);`,
 	`CREATE TABLE IF NOT EXISTS ca_config (
 		ca_id TEXT PRIMARY KEY,
 		name TEXT NOT NULL,

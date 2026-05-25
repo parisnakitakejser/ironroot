@@ -1,6 +1,10 @@
 package config
 
-import "testing"
+import (
+	"os"
+	"path/filepath"
+	"testing"
+)
 
 func TestLoadDefaults(t *testing.T) {
 	cfg, err := Load(t.TempDir() + "/missing.yaml")
@@ -12,6 +16,26 @@ func TestLoadDefaults(t *testing.T) {
 	}
 	if cfg.PKI.DefaultLifetime == 0 || cfg.PKI.RenewBefore == 0 {
 		t.Fatal("expected certificate lifetime defaults")
+	}
+}
+
+func TestLoadRBACConfig(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "config.yaml")
+	if err := os.WriteFile(path, []byte(`rbac:
+  enabled: true
+  mode: file
+  paths:
+    - config/rbac/*.yaml
+    - config/rbac/*.yml
+`), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	cfg, err := Load(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !cfg.RBAC.Enabled || cfg.RBAC.Mode != "file" || len(cfg.RBAC.Paths) != 2 {
+		t.Fatalf("unexpected RBAC config: %+v", cfg.RBAC)
 	}
 }
 

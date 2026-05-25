@@ -17,6 +17,7 @@ import (
 	"github.com/parisnakitakejser/ironroot/internal/ca"
 	"github.com/parisnakitakejser/ironroot/internal/config"
 	"github.com/parisnakitakejser/ironroot/internal/db"
+	"github.com/parisnakitakejser/ironroot/internal/rbac"
 	"github.com/parisnakitakejser/ironroot/internal/telemetry"
 )
 
@@ -57,6 +58,14 @@ func main() {
 	if err := store.Migrate(ctx); err != nil {
 		logger.Error("run migrations", "error", err)
 		os.Exit(1)
+	}
+	rbacResult, err := rbac.LoadAndApply(ctx, cfg.RBAC, store)
+	if err != nil {
+		logger.Error("load RBAC manifests", "error", err)
+		os.Exit(1)
+	}
+	if cfg.RBAC.Enabled {
+		logger.Info("loaded RBAC manifests", "files", len(rbacResult.Files), "roles", rbacResult.Roles, "role_bindings", rbacResult.RoleBindings, "token_policies", rbacResult.TokenPolicies)
 	}
 
 	var authority ca.Authority

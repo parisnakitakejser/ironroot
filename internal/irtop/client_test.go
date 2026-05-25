@@ -82,8 +82,8 @@ func TestSnapshotLoadsOptionalEndpointsConcurrently(t *testing.T) {
 		t.Fatal(err)
 	}
 	elapsed := time.Since(start)
-	if got := optionalRequests.Load(); got != 8 {
-		t.Fatalf("optional request count = %d, want 8", got)
+	if got := optionalRequests.Load(); got != 9 {
+		t.Fatalf("optional request count = %d, want 9", got)
 	}
 	if elapsed >= 250*time.Millisecond {
 		t.Fatalf("snapshot took %s; optional endpoints appear to be loading sequentially", elapsed)
@@ -143,6 +143,8 @@ func responseBodyForPath(path string) string {
 		return mustJSON(Security{Status: "pass"})
 	case "/v1/status/telemetry":
 		return mustJSON(Telemetry{Enabled: true})
+	case "/v1/status/ca-hierarchy":
+		return mustJSON(CAHierarchy{Summary: CAHierarchySummary{RootCAs: 1, IntermediateCAs: 1}, Roots: []RootCAStatus{{ID: "root-local", Name: "Local Root", Status: "active", Intermediates: []IntermediateCAStatus{{ID: "int-local", Name: "Local Intermediate", Status: "active"}}}}})
 	case "/v1/audit/recent":
 		return mustJSON([]AuditEvent{{Action: "certificate.issued", Result: "success"}})
 	default:

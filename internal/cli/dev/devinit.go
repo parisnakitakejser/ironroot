@@ -52,6 +52,7 @@ func RunDevInit(ctx context.Context, opts DevInitOptions) error {
 
 	dirs := []string{
 		"config",
+		filepath.Join("config", "rbac"),
 		"data",
 		"pki",
 		filepath.Join("pki", "root"),
@@ -78,6 +79,9 @@ func RunDevInit(ctx context.Context, opts DevInitOptions) error {
 
 	config := renderLocalConfig(workspace)
 	if err := writeGeneratedFile(filepath.Join(workspace, "config", "config.yaml"), []byte(config), 0o644, opts.Force, opts.DryRun, &result); err != nil {
+		return err
+	}
+	if err := writeGeneratedFile(filepath.Join(workspace, "config", "rbac", "local-rbac.yaml"), []byte(localRBACManifest()), 0o644, opts.Force, opts.DryRun, &result); err != nil {
 		return err
 	}
 	if err := writeGeneratedFile(filepath.Join(workspace, ".gitignore"), []byte(localGitignore()), 0o644, opts.Force, opts.DryRun, &result); err != nil {
@@ -157,6 +161,8 @@ func renderLocalConfig(workspace string) string {
 		`".localdev/pki/intermediate/ca-chain.crt"`:        quoteYAMLPath(filepath.Join(workspace, "pki", "intermediate", "ca-chain.crt")),
 		`".localdev/pki/intermediate/intermediate-ca.crt"`: quoteYAMLPath(filepath.Join(workspace, "pki", "intermediate", "intermediate-ca.crt")),
 		`".localdev/pki/intermediate/intermediate-ca.key"`: quoteYAMLPath(filepath.Join(workspace, "pki", "intermediate", "intermediate-ca.key")),
+		`"config/rbac/*.yaml"`:                             quoteYAMLPath(filepath.Join(workspace, "config", "rbac", "*.yaml")),
+		`"config/rbac/*.yml"`:                              quoteYAMLPath(filepath.Join(workspace, "config", "rbac", "*.yml")),
 	}
 	for old, newValue := range replacements {
 		config = strings.ReplaceAll(config, old, newValue)
@@ -185,6 +191,7 @@ func localReadme() string {
 		"",
 		"Directories:",
 		"- config/       generated local config with absolute PKI and SQLite paths",
+		"- config/rbac/  file-based RBAC manifests loaded on server startup",
 		"- data/         SQLite database",
 		"- pki/root/     local Root CA material created by ironroot-admin",
 		"- pki/intermediate/ local Intermediate CA material created by ironroot-admin",
@@ -262,6 +269,12 @@ pki:
   intermediate_key_pass: "ironroot-local-intermediate"
   default_lifetime: 2160h
   renew_before: 720h
+rbac:
+  enabled: true
+  mode: file
+  paths:
+    - "config/rbac/*.yaml"
+    - "config/rbac/*.yml"
 telemetry:
   enabled: false
   service_name: ironroot-local
@@ -272,3 +285,87 @@ telemetry:
 log:
   level: info
 `
+
+func localRBACManifest() string {
+	return `apiVersion: ironroot.io/v1alpha1
+kind: RootCA
+metadata:
+  name: local-root
+spec:
+  displayName: IronRoot Local Root CA
+  environment: development
+  fingerprint: sha256:local-root-placeholder
+  status: active
+  trustDomain: local.test
+---
+apiVersion: ironroot.io/v1alpha1
+kind: IntermediateCA
+metadata:
+  name: local-intermediate
+spec:
+  displayName: IronRoot Local Intermediate CA
+  rootRef: local-root
+  environment: development
+  owner: platform
+  namespace: local
+  fingerprint: sha256:local-intermediate-placeholder
+  status: active
+  maxTTL: 24h
+  allowedDNS:
+    - demo.local
+    - "*.local.test"
+  allowedUsages:
+    - server
+    - client
+  issuanceLimit: 25
+  renewalAllowed: true
+  requireApproval: false
+---
+apiVersion: ironroot.io/v1alpha1
+kind: Group
+metadata:
+  name: platform
+---
+apiVersion: ironroot.io/v1alpha1
+kind: CARole
+metadata:
+  name: local-platform-issuer
+spec:
+  rules:
+    - resources:
+        - certificates
+      verbs:
+        - request
+        - renew
+        - view
+      intermediateRef: local-intermediate
+---
+apiVersion: ironroot.io/v1alpha1
+kind: CARoleBinding
+metadata:
+  name: local-platform-issuer-binding
+spec:
+  roleRef:
+    kind: CARole
+    name: local-platform-issuer
+  subjects:
+    - kind: Group
+      name: platform
+---
+apiVersion: ironroot.io/v1alpha1
+kind: TokenPolicy
+metadata:
+  name: local-short-lived-server
+spec:
+  intermediateRef: local-intermediate
+  certificateTypes:
+    - server
+  allowedDNS:
+    - demo.local
+    - "*.local.test"
+  maxTTL: 1h
+  issuanceLimit: 10
+  renewalAllowed: true
+  requireApproval: false
+`
+}

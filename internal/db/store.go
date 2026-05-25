@@ -34,6 +34,14 @@ type Store interface {
 	ListAuditLogs(context.Context, int) ([]AuditLog, error)
 	UpsertCAConfig(context.Context, CAConfig) error
 	ListCAConfigs(context.Context) ([]CAConfig, error)
+	UpsertRootCA(context.Context, RootCA) error
+	ListRootCAs(context.Context) ([]RootCA, error)
+	UpsertIntermediateCA(context.Context, IntermediateCA) error
+	ListIntermediateCAs(context.Context) ([]IntermediateCA, error)
+	UpsertCARole(context.Context, CARole) error
+	ListCARoles(context.Context) ([]CARole, error)
+	UpsertCATokenPolicy(context.Context, CATokenPolicy) error
+	ListCATokenPolicies(context.Context) ([]CATokenPolicy, error)
 }
 
 type SQLStore struct{ db *sql.DB }
@@ -118,4 +126,59 @@ type CAConfig struct {
 	CreatedAt               time.Time
 	NotBefore               time.Time
 	NotAfter                time.Time
+}
+
+type RootCA struct {
+	ID          string
+	Name        string
+	Environment string
+	Fingerprint string
+	Status      string
+	TrustDomain string
+	CreatedAt   time.Time
+	NotBefore   time.Time
+	NotAfter    time.Time
+}
+
+type IntermediateCA struct {
+	ID              string
+	RootID          string
+	Name            string
+	Environment     string
+	Owner           string
+	Namespace       string
+	Fingerprint     string
+	Status          string
+	MaxTTL          time.Duration
+	AllowedDNS      string
+	AllowedUsages   string
+	RequireApproval bool
+	IssuanceLimit   int
+	RenewalAllowed  bool
+	CreatedAt       time.Time
+	NotBefore       time.Time
+	NotAfter        time.Time
+}
+
+type CARole struct {
+	ID             string
+	Name           string
+	Subject        string
+	IntermediateID string
+	Permissions    string
+	CreatedAt      time.Time
+}
+
+type CATokenPolicy struct {
+	ID               string
+	Name             string
+	IntermediateID   string
+	CertificateTypes string
+	AllowedDNS       string
+	MaxTTL           time.Duration
+	IssuanceLimit    int
+	RenewalAllowed   bool
+	RequireApproval  bool
+	CreatedAt        time.Time
+	ExpiresAt        time.Time
 }

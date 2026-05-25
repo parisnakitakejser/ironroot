@@ -173,7 +173,7 @@ irtop --server https://localhost:8443 \
 - Certificates
 - Enrollments
 - Tokens
-- CA Health
+- CA Health with multi-root and Intermediate CA hierarchy
 - Security
 - Telemetry
 - Audit Log
@@ -214,3 +214,9 @@ The status API used by `irtop` is designed to avoid sensitive material:
 - no destructive operations
 
 Use a read-only admin credential when authentication support is enabled.
+
+## Multi-Root CA Hierarchy
+
+The CA Health view reads `/v1/status/ca-hierarchy` when available. It displays Root CAs, Intermediate CA chains, active/revoked certificate counts per issuer, token policy counts, RBAC role counts, owner/namespace metadata, expiration health, and approval/renewal state.
+
+The hierarchy view is monitoring-only. It does not grant signing permissions or expose CA private key material.

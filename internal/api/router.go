@@ -52,6 +52,7 @@ func NewRouter(dep Dependencies) http.Handler {
 	r.Get("/v1/status/overview", h.statusOverview)
 	r.Get("/v1/status/server", h.statusServer)
 	r.Get("/v1/status/ca", h.statusCA)
+	r.Get("/v1/status/ca-hierarchy", h.statusCAHierarchy)
 	r.Get("/v1/status/certificates", h.statusCertificates)
 	r.Get("/v1/status/enrollments", h.statusEnrollments)
 	r.Get("/v1/status/tokens", h.statusTokens)

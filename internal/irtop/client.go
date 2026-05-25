@@ -116,6 +116,7 @@ func (c *Client) snapshotDetails(ctx context.Context, out *Snapshot) {
 		{path: "/v1/status/tokens", out: &out.Tokens},
 		{path: "/v1/status/security", out: &out.Security},
 		{path: "/v1/status/telemetry", out: &out.Telemetry},
+		{path: "/v1/status/ca-hierarchy", out: &out.CAHierarchy},
 		{path: "/v1/audit/recent", out: &out.Audit},
 	}
 	var wg sync.WaitGroup

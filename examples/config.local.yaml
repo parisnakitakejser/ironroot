@@ -14,6 +14,12 @@ pki:
   intermediate_key_pass: "ironroot-local-intermediate"
   default_lifetime: 2160h
   renew_before: 720h
+rbac:
+  enabled: true
+  mode: file
+  paths:
+    - config/rbac/*.yaml
+    - config/rbac/*.yml
 telemetry:
   enabled: false
   service_name: ironroot-local

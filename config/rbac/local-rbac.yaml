@@ -1,0 +1,80 @@
+apiVersion: ironroot.io/v1alpha1
+kind: RootCA
+metadata:
+  name: local-root
+spec:
+  displayName: IronRoot Local Root CA
+  environment: development
+  fingerprint: sha256:local-root-placeholder
+  status: active
+  trustDomain: local.test
+---
+apiVersion: ironroot.io/v1alpha1
+kind: IntermediateCA
+metadata:
+  name: local-intermediate
+spec:
+  displayName: IronRoot Local Intermediate CA
+  rootRef: local-root
+  environment: development
+  owner: platform
+  namespace: local
+  fingerprint: sha256:local-intermediate-placeholder
+  status: active
+  maxTTL: 24h
+  allowedDNS:
+    - demo.local
+    - "*.local.test"
+  allowedUsages:
+    - server
+    - client
+  issuanceLimit: 25
+  renewalAllowed: true
+  requireApproval: false
+---
+apiVersion: ironroot.io/v1alpha1
+kind: Group
+metadata:
+  name: platform
+---
+apiVersion: ironroot.io/v1alpha1
+kind: CARole
+metadata:
+  name: local-platform-issuer
+spec:
+  rules:
+    - resources:
+        - certificates
+      verbs:
+        - request
+        - renew
+        - view
+      intermediateRef: local-intermediate
+---
+apiVersion: ironroot.io/v1alpha1
+kind: CARoleBinding
+metadata:
+  name: local-platform-issuer-binding
+spec:
+  roleRef:
+    kind: CARole
+    name: local-platform-issuer
+  subjects:
+    - kind: Group
+      name: platform
+---
+apiVersion: ironroot.io/v1alpha1
+kind: TokenPolicy
+metadata:
+  name: local-short-lived-server
+spec:
+  intermediateRef: local-intermediate
+  certificateTypes:
+    - server
+  allowedDNS:
+    - demo.local
+    - "*.local.test"
+  maxTTL: 1h
+  issuanceLimit: 10
+  renewalAllowed: true
+  requireApproval: false
