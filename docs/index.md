@@ -10,9 +10,9 @@
 IronRoot is a modern internal PKI platform for offline-root security, online issuing CAs, observable certificate operations, Kubernetes-native deployment, Podman workflows, and self-hosted infrastructure.
 
 !!! note "Project maturity"
-    IronRoot is currently Alpha-stage. The documentation is actively evolving, and most pages are marked `Stage: Alpha` and `Status: Draft` until their workflows are fully validated. The primary onboarding path today is [Contributing > Local Development](contributing/local-development.md), which is marked `Status: In Progress`.
+    IronRoot is currently Alpha-stage. The documentation is actively evolving, and most pages are marked `Stage: Alpha` until their workflows are fully validated. Start with the [Getting Started journey](getting-started/index.md) for the clearest path from first startup to production planning.
 
-[Start the local quick start](getting-started/local-quickstart.md){ .md-button .md-button--primary }
+[Start the getting started journey](getting-started/index.md){ .md-button .md-button--primary }
 [Read the architecture](architecture/index.md){ .md-button }
 
 ## Architecture At A Glance
@@ -42,7 +42,9 @@ Together, **IronRoot represents hardened trust infrastructure designed for moder
 
 ## Start Here
 
-- [Local Quick Start](getting-started/local-quickstart.md): generate a Root CA, create an Intermediate, start IronRoot, issue a browser-trusted local website certificate.
+- [Getting Started](getting-started/index.md): follow the complete beginner-to-production onboarding path.
+- [Install And First Startup](getting-started/quick-start.md): install tools, generate local config, start the server, and verify health.
+- [Local Browser Certificate Demo](getting-started/local-quickstart.md): issue a browser-trusted local website certificate.
 - [Local Development](contributing/local-development.md): primary validated contributor and local testing workflow.
 - [Binary Installation](installation/binary.md): run IronRoot directly on a host.
 - [Podman Installation](podman/index.md): run with mounted config, data, and PKI material.

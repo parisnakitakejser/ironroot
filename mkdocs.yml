@@ -41,11 +41,18 @@ plugins:
   - search
 nav:
   - Getting Started:
-      - Overview: index.md
-      - First Steps:
-          - Local Quick Start: getting-started/local-quickstart.md
-          - Quick Start: getting-started/quick-start.md
-          - Setup Guide: getting-started/setup.md
+      - Overview: getting-started/index.md
+      - 1. Introduction: getting-started/introduction.md
+      - 2. Install And First Startup: getting-started/quick-start.md
+      - 3. First Configuration: getting-started/setup.md
+      - 4. Terminal UI Walkthrough: getting-started/terminal-ui.md
+      - 5. Certificate Workflows: getting-started/certificate-workflows.md
+      - 6. RBAC And Security: getting-started/rbac-security.md
+      - 7. Infrastructure As Code: getting-started/iac.md
+      - 8. Production Deployment: getting-started/production.md
+      - 9. Advanced Architecture: getting-started/advanced-architecture.md
+      - 10. Troubleshooting: getting-started/troubleshooting.md
+      - Local Browser Certificate Demo: getting-started/local-quickstart.md
   - Architecture:
       - Overview: architecture/index.md
       - System Model:
