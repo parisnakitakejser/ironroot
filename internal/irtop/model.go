@@ -12,21 +12,6 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 )
 
-type View int
-
-const (
-	ViewOverview View = iota
-	ViewCertificates
-	ViewEnrollments
-	ViewTokens
-	ViewCAHealth
-	ViewSecurity
-	ViewTelemetry
-	ViewAuditLog
-	ViewServer
-	ViewHelp
-)
-
 type snapshotMsg struct {
 	profileIndex int
 	snapshot     Snapshot
@@ -61,22 +46,19 @@ type Model struct {
 
 func NewModel(client *Client, refresh time.Duration, initial View) Model {
 	if refresh <= 0 {
-		refresh = 5 * time.Second
+		refresh = defaultRefresh
 	}
 	return Model{client: client, refresh: refresh, view: initial, state: stateLoading}
 }
 
 func NewProfileModel(profiles ProfileSet) Model {
-	if len(profiles.Profiles) == 0 {
-		m := NewModel(nil, 5*time.Second, ViewOverview)
+	if profiles.Len() == 0 {
+		m := NewModel(nil, defaultRefresh, ViewOverview)
 		m.err = fmt.Errorf("no irtop profiles configured")
 		m.state = stateError
 		return m
 	}
-	active := profiles.Active
-	if active < 0 || active >= len(profiles.Profiles) {
-		active = 0
-	}
+	active := profiles.ActiveIndex()
 	cfg := profiles.Profiles[active].Config
 	client, err := NewClientChecked(cfg)
 	m := NewModel(client, cfg.Refresh, ParseView(cfg.DefaultView))
@@ -90,31 +72,8 @@ func NewProfileModel(profiles ProfileSet) Model {
 	return m
 }
 
-func ParseView(name string) View {
-	switch strings.ToLower(strings.TrimSpace(name)) {
-	case "certificates", "certs":
-		return ViewCertificates
-	case "enrollments":
-		return ViewEnrollments
-	case "tokens":
-		return ViewTokens
-	case "ca", "ca-health", "ca_health":
-		return ViewCAHealth
-	case "security":
-		return ViewSecurity
-	case "telemetry", "otel":
-		return ViewTelemetry
-	case "audit", "audit-log", "audit_log":
-		return ViewAuditLog
-	case "server":
-		return ViewServer
-	default:
-		return ViewOverview
-	}
-}
-
 func RenderText(s Snapshot) string {
-	m := NewModel(nil, 5*time.Second, ViewOverview)
+	m := NewModel(nil, defaultRefresh, ViewOverview)
 	m.snapshot = s
 	return m.overviewView()
 }
@@ -156,24 +115,10 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 		case "r":
 			return m, m.refreshNow()
-		case "1":
-			m.view = ViewOverview
-		case "2":
-			m.view = ViewCertificates
-		case "3":
-			m.view = ViewEnrollments
-		case "4":
-			m.view = ViewTokens
-		case "5":
-			m.view = ViewCAHealth
-		case "6":
-			m.view = ViewSecurity
-		case "7":
-			m.view = ViewTelemetry
-		case "8":
-			m.view = ViewAuditLog
-		case "9":
-			m.view = ViewServer
+		default:
+			if view, ok := viewForKey(msg.String()); ok {
+				m.view = view
+			}
 		}
 	case tickMsg:
 		return m, tea.Batch(m.refreshNow(), tick(m.refresh))
@@ -275,13 +220,15 @@ func (m Model) header(width int) string {
 }
 
 func (m Model) tabs(width int) string {
-	names := []string{"1 Overview", "2 Certs", "3 Enroll", "4 Tokens", "5 CA", "6 Security", "7 Telemetry", "8 Audit", "9 Server"}
-	for i := range names {
-		if View(i) == m.view {
-			names[i] = activeTabStyle.Render(names[i])
+	names := make([]string, 0, len(mainViewSpecs))
+	for _, spec := range mainViewSpecs {
+		label := spec.Tab
+		if spec.View == m.view {
+			label = activeTabStyle.Render(label)
 		} else {
-			names[i] = tabStyle.Render(names[i])
+			label = tabStyle.Render(label)
 		}
+		names = append(names, label)
 	}
 	return tabsStyle.Width(width).Render(strings.Join(names, " "))
 }
@@ -562,26 +509,23 @@ func (m Model) serverView() string {
 }
 
 func (m Model) helpView() string {
-	return panel(m.contentWidth(), "Help", strings.Join([]string{
+	lines := []string{
 		"q       quit",
 		"?       help",
 		"r       refresh now",
-		"1       overview",
-		"2       certificates",
-		"3       enrollments",
-		"4       tokens",
-		"5       CA health",
-		"6       security",
-		"7       telemetry",
-		"8       audit log",
-		"9       server",
+	}
+	for _, spec := range mainViewSpecs {
+		lines = append(lines, fmt.Sprintf("%s       %s", spec.Key, spec.Help))
+	}
+	lines = append(lines,
 		"p       profile selector",
 		"[ / ]   previous / next profile",
 		"/       search/filter (planned)",
 		"s       sort (planned)",
 		"enter   details (planned)",
 		"esc     back",
-	}, "\n"))
+	)
+	return panel(m.contentWidth(), "Help", strings.Join(lines, "\n"))
 }
 
 var (
@@ -699,29 +643,4 @@ func empty(s, fallback string) string {
 		return fallback
 	}
 	return s
-}
-
-func viewName(v View) string {
-	switch v {
-	case ViewCertificates:
-		return "certificates"
-	case ViewEnrollments:
-		return "enrollments"
-	case ViewTokens:
-		return "tokens"
-	case ViewCAHealth:
-		return "ca"
-	case ViewSecurity:
-		return "security"
-	case ViewTelemetry:
-		return "telemetry"
-	case ViewAuditLog:
-		return "audit"
-	case ViewServer:
-		return "server"
-	case ViewHelp:
-		return "help"
-	default:
-		return "overview"
-	}
 }

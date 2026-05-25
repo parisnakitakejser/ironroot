@@ -15,12 +15,15 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 )
 
 func TestSnapshotParsesStatusEndpointsAndSendsToken(t *testing.T) {
 	var authHeader string
+	var authMu sync.Mutex
 	client := &Client{
 		baseURL: "https://ironroot.test",
 		token:   "read-only-token",
@@ -29,7 +32,9 @@ func TestSnapshotParsesStatusEndpointsAndSendsToken(t *testing.T) {
 			if body == "" {
 				return &http.Response{StatusCode: http.StatusNotFound, Status: "404 Not Found", Body: io.NopCloser(strings.NewReader(`{}`)), Header: make(http.Header)}, nil
 			}
+			authMu.Lock()
 			authHeader = r.Header.Get("Authorization")
+			authMu.Unlock()
 			return &http.Response{StatusCode: http.StatusOK, Status: "200 OK", Body: io.NopCloser(strings.NewReader(body)), Header: make(http.Header)}, nil
 		})},
 	}
@@ -37,8 +42,11 @@ func TestSnapshotParsesStatusEndpointsAndSendsToken(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if authHeader != "Bearer read-only-token" {
-		t.Fatalf("unexpected auth header %q", authHeader)
+	authMu.Lock()
+	gotAuthHeader := authHeader
+	authMu.Unlock()
+	if gotAuthHeader != "Bearer read-only-token" {
+		t.Fatalf("unexpected auth header %q", gotAuthHeader)
 	}
 	if snapshot.Overview.Server.Status != "healthy" {
 		t.Fatalf("unexpected overview status %q", snapshot.Overview.Server.Status)
@@ -48,6 +56,64 @@ func TestSnapshotParsesStatusEndpointsAndSendsToken(t *testing.T) {
 	}
 	if len(snapshot.Tokens) != 1 || snapshot.Tokens[0].ID != "tok-1" {
 		t.Fatalf("unexpected tokens %#v", snapshot.Tokens)
+	}
+}
+
+func TestSnapshotLoadsOptionalEndpointsConcurrently(t *testing.T) {
+	var optionalRequests atomic.Int32
+	client := &Client{
+		baseURL: "https://ironroot.test",
+		http: &http.Client{Transport: roundTripFunc(func(r *http.Request) (*http.Response, error) {
+			if r.URL.Path != "/v1/status/overview" {
+				optionalRequests.Add(1)
+				time.Sleep(40 * time.Millisecond)
+			}
+			body := responseBodyForPath(r.URL.Path)
+			if body == "" {
+				body = `{}`
+			}
+			return &http.Response{StatusCode: http.StatusOK, Status: "200 OK", Body: io.NopCloser(strings.NewReader(body)), Header: make(http.Header)}, nil
+		})},
+	}
+
+	start := time.Now()
+	_, err := client.Snapshot(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	elapsed := time.Since(start)
+	if got := optionalRequests.Load(); got != 8 {
+		t.Fatalf("optional request count = %d, want 8", got)
+	}
+	if elapsed >= 250*time.Millisecond {
+		t.Fatalf("snapshot took %s; optional endpoints appear to be loading sequentially", elapsed)
+	}
+}
+
+func TestSnapshotRequiresOverviewButIgnoresOptionalFailures(t *testing.T) {
+	client := &Client{
+		baseURL: "https://ironroot.test",
+		http: &http.Client{Transport: roundTripFunc(func(r *http.Request) (*http.Response, error) {
+			if r.URL.Path != "/v1/status/overview" {
+				return &http.Response{StatusCode: http.StatusInternalServerError, Status: "500 Internal Server Error", Body: io.NopCloser(strings.NewReader(`{}`)), Header: make(http.Header)}, nil
+			}
+			return &http.Response{StatusCode: http.StatusOK, Status: "200 OK", Body: io.NopCloser(strings.NewReader(responseBodyForPath(r.URL.Path))), Header: make(http.Header)}, nil
+		})},
+	}
+
+	snapshot, err := client.Snapshot(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if snapshot.Overview.Server.Status != "healthy" {
+		t.Fatalf("overview status = %q", snapshot.Overview.Server.Status)
+	}
+
+	client.http.Transport = roundTripFunc(func(r *http.Request) (*http.Response, error) {
+		return &http.Response{StatusCode: http.StatusInternalServerError, Status: "500 Internal Server Error", Body: io.NopCloser(strings.NewReader(`{}`)), Header: make(http.Header)}, nil
+	})
+	if _, err := client.Snapshot(context.Background()); err == nil || !strings.Contains(err.Error(), "500 Internal Server Error") {
+		t.Fatalf("expected overview failure, got %v", err)
 	}
 }
 

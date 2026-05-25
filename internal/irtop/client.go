@@ -10,6 +10,7 @@ import (
 	"net/url"
 	"os"
 	"strings"
+	"sync"
 	"time"
 
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
@@ -98,16 +99,35 @@ func (c *Client) Snapshot(ctx context.Context) (Snapshot, error) {
 	if err := c.get(ctx, "/v1/status/overview", &out.Overview); err != nil {
 		return out, err
 	}
-	_ = c.get(ctx, "/v1/status/server", &out.Server)
-	_ = c.get(ctx, "/v1/status/ca", &out.CA)
-	_ = c.get(ctx, "/v1/status/certificates", &out.Certificates)
-	_ = c.get(ctx, "/v1/status/enrollments", &out.Enrollments)
-	_ = c.get(ctx, "/v1/status/tokens", &out.Tokens)
-	_ = c.get(ctx, "/v1/status/security", &out.Security)
-	_ = c.get(ctx, "/v1/status/telemetry", &out.Telemetry)
-	_ = c.get(ctx, "/v1/audit/recent", &out.Audit)
+	c.snapshotDetails(ctx, &out)
 	out.UpdatedAt = time.Now()
 	return out, nil
+}
+
+func (c *Client) snapshotDetails(ctx context.Context, out *Snapshot) {
+	requests := []struct {
+		path string
+		out  any
+	}{
+		{path: "/v1/status/server", out: &out.Server},
+		{path: "/v1/status/ca", out: &out.CA},
+		{path: "/v1/status/certificates", out: &out.Certificates},
+		{path: "/v1/status/enrollments", out: &out.Enrollments},
+		{path: "/v1/status/tokens", out: &out.Tokens},
+		{path: "/v1/status/security", out: &out.Security},
+		{path: "/v1/status/telemetry", out: &out.Telemetry},
+		{path: "/v1/audit/recent", out: &out.Audit},
+	}
+	var wg sync.WaitGroup
+	wg.Add(len(requests))
+	for _, request := range requests {
+		request := request
+		go func() {
+			defer wg.Done()
+			_ = c.get(ctx, request.path, request.out)
+		}()
+	}
+	wg.Wait()
 }
 
 func (c *Client) get(ctx context.Context, path string, out any) error {

@@ -15,6 +15,12 @@ import (
 
 var ErrMissingDefaultConfig = errors.New("missing default irtop config")
 
+const (
+	defaultRefresh = 5 * time.Second
+	defaultView    = "overview"
+	defaultOutput  = "tui"
+)
+
 type Config struct {
 	Server             string        `yaml:"server"`
 	Endpoint           string        `yaml:"endpoint"`
@@ -26,23 +32,13 @@ type Config struct {
 	Output             string        `yaml:"output"`
 }
 
-type Profile struct {
-	Name   string
-	Config Config
-}
-
-type ProfileSet struct {
-	Profiles []Profile
-	Active   int
-}
-
 type configFile struct {
 	DefaultProfile string            `yaml:"default_profile"`
 	Profiles       map[string]Config `yaml:"profiles"`
 }
 
 func DefaultConfig() Config {
-	return Config{Refresh: 5 * time.Second, DefaultView: "overview", Output: "tui"}
+	return Config{Refresh: defaultRefresh, DefaultView: defaultView, Output: defaultOutput}
 }
 
 func DefaultConfigPath() (string, error) {
@@ -74,11 +70,7 @@ func LoadProfiles(path string) (ProfileSet, error) {
 	b, err := os.ReadFile(path)
 	if err != nil {
 		if os.IsNotExist(err) {
-			msg := fmt.Sprintf("irtop config file %s is missing; create ~/.ironroot/config or pass --config", path)
-			if usingDefault {
-				return ProfileSet{}, fmt.Errorf("%s: %w", msg, ErrMissingDefaultConfig)
-			}
-			return ProfileSet{}, errors.New(msg)
+			return ProfileSet{}, missingConfigError(path, usingDefault)
 		}
 		return ProfileSet{}, fmt.Errorf("read irtop config file %s: %w", path, err)
 	}
@@ -91,6 +83,14 @@ func LoadProfiles(path string) (ProfileSet, error) {
 
 func IsMissingDefaultConfig(err error) bool {
 	return errors.Is(err, ErrMissingDefaultConfig)
+}
+
+func missingConfigError(path string, usingDefault bool) error {
+	msg := fmt.Sprintf("irtop config file %s is missing; create ~/.ironroot/config or pass --config", path)
+	if usingDefault {
+		return fmt.Errorf("%s: %w", msg, ErrMissingDefaultConfig)
+	}
+	return errors.New(msg)
 }
 
 func parseProfiles(data []byte, path string) (ProfileSet, error) {
@@ -166,6 +166,7 @@ func buildProfileSet(raw configFile, path string) (ProfileSet, error) {
 	}
 	sort.Strings(names)
 	active := 0
+	foundDefault := raw.DefaultProfile == ""
 	profiles := make([]Profile, 0, len(names))
 	for i, name := range names {
 		cfg := raw.Profiles[name]
@@ -180,42 +181,13 @@ func buildProfileSet(raw configFile, path string) (ProfileSet, error) {
 		profiles = append(profiles, Profile{Name: name, Config: cfg})
 		if raw.DefaultProfile == name {
 			active = i
+			foundDefault = true
 		}
 	}
-	if raw.DefaultProfile != "" {
-		found := false
-		for _, name := range names {
-			if raw.DefaultProfile == name {
-				found = true
-				break
-			}
-		}
-		if !found {
-			return ProfileSet{}, fmt.Errorf("irtop config file %s default_profile %q does not match any profile", path, raw.DefaultProfile)
-		}
+	if !foundDefault {
+		return ProfileSet{}, fmt.Errorf("irtop config file %s default_profile %q does not match any profile", path, raw.DefaultProfile)
 	}
 	return ProfileSet{Profiles: profiles, Active: active}, nil
-}
-
-func (p ProfileSet) ActiveConfig() Config {
-	if len(p.Profiles) == 0 || p.Active < 0 || p.Active >= len(p.Profiles) {
-		return DefaultConfig()
-	}
-	return p.Profiles[p.Active].Config
-}
-
-func (p *ProfileSet) Select(name string) error {
-	name = strings.TrimSpace(name)
-	if name == "" {
-		return nil
-	}
-	for i, profile := range p.Profiles {
-		if profile.Name == name {
-			p.Active = i
-			return nil
-		}
-	}
-	return fmt.Errorf("irtop profile %q was not found in config", name)
 }
 
 func requireProfileFields(data []byte, path string) error {
@@ -245,10 +217,12 @@ func requireProfileFields(data []byte, path string) error {
 }
 
 func validateConfig(cfg Config, path string) error {
-	if strings.TrimSpace(cfg.Server) != "" && strings.TrimSpace(cfg.Endpoint) != "" && strings.TrimSpace(cfg.Server) != strings.TrimSpace(cfg.Endpoint) {
+	server := strings.TrimSpace(cfg.Server)
+	endpoint := strings.TrimSpace(cfg.Endpoint)
+	if server != "" && endpoint != "" && server != endpoint {
 		return fmt.Errorf("irtop config file %s defines both server and endpoint with different values", path)
 	}
-	if strings.TrimSpace(cfg.Server) == "" && strings.TrimSpace(cfg.Endpoint) == "" {
+	if server == "" && endpoint == "" {
 		return fmt.Errorf("irtop config file %s is missing required value: server", path)
 	}
 	if cfg.Refresh <= 0 {
@@ -270,19 +244,16 @@ func validateConfig(cfg Config, path string) error {
 }
 
 func normalizeConfig(cfg Config) Config {
-	if strings.TrimSpace(cfg.Server) == "" {
+	cfg.Server = strings.TrimSpace(cfg.Server)
+	cfg.Endpoint = strings.TrimSpace(cfg.Endpoint)
+	cfg.CAFile = strings.TrimSpace(cfg.CAFile)
+	cfg.DefaultView = strings.TrimSpace(cfg.DefaultView)
+	cfg.Output = strings.TrimSpace(cfg.Output)
+	if cfg.Server == "" {
 		cfg.Server = cfg.Endpoint
 	}
+	cfg.Endpoint = ""
 	return cfg
-}
-
-func validViewName(value string) bool {
-	switch strings.ToLower(strings.TrimSpace(value)) {
-	case "overview", "certificates", "certs", "enrollments", "tokens", "ca-health", "security", "telemetry", "audit-log", "server":
-		return true
-	default:
-		return false
-	}
 }
 
 func expandPath(path string) string {

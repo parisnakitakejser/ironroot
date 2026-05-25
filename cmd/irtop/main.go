@@ -56,50 +56,12 @@ func main() {
 		os.Exit(2)
 	}
 	cfg := profiles.ActiveConfig()
-	if server != "" {
-		cfg.Server = server
-	}
-	if caFile != "" {
-		cfg.CAFile = caFile
-	}
-	if refresh > 0 {
-		cfg.Refresh = refresh
-	}
-	if insecureSkipVerify {
-		cfg.InsecureSkipVerify = true
-	}
-	if token != "" {
-		cfg.Token = token
-	}
-	if output != "" {
-		cfg.Output = output
-	}
-	if cfg.Output == "" {
-		cfg.Output = "tui"
-	}
-	if cfg.Server == "" {
-		cfg.Server = server
-	}
-	if len(profiles.Profiles) > 0 {
-		profiles.Profiles[profiles.Active].Config = cfg
-	}
+	cfg = applyFlagOverrides(cfg, server, caFile, refresh, insecureSkipVerify, token, output)
+	profiles.SetActiveConfig(cfg)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	telemetryCfg := config.Default().Telemetry
-	telemetryCfg.ServiceName = "irtop"
-	if endpoint := os.Getenv("OTEL_EXPORTER_OTLP_ENDPOINT"); endpoint != "" {
-		telemetryCfg.Enabled = true
-		telemetryCfg.OTLPEndpoint = endpoint
-		telemetryCfg.Exporter.Endpoint = endpoint
-	}
-	if protocol := os.Getenv("OTEL_EXPORTER_OTLP_PROTOCOL"); protocol != "" {
-		telemetryCfg.OTLPProtocol = protocol
-		telemetryCfg.Exporter.Protocol = protocol
-	}
-	if serviceName := os.Getenv("OTEL_SERVICE_NAME"); serviceName != "" {
-		telemetryCfg.ServiceName = serviceName
-	}
+	telemetryCfg := telemetryConfigFromEnv()
 	shutdown, err := telemetry.Configure(ctx, telemetryCfg, "irtop")
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Failed to initialize telemetry: %v\n", err)
@@ -140,6 +102,49 @@ func main() {
 	}
 }
 
+func applyFlagOverrides(cfg irtop.Config, server, caFile string, refresh time.Duration, insecureSkipVerify bool, token, output string) irtop.Config {
+	if server != "" {
+		cfg.Server = server
+	}
+	if caFile != "" {
+		cfg.CAFile = caFile
+	}
+	if refresh > 0 {
+		cfg.Refresh = refresh
+	}
+	if insecureSkipVerify {
+		cfg.InsecureSkipVerify = true
+	}
+	if token != "" {
+		cfg.Token = token
+	}
+	if output != "" {
+		cfg.Output = output
+	}
+	if cfg.Output == "" {
+		cfg.Output = "tui"
+	}
+	return cfg
+}
+
+func telemetryConfigFromEnv() config.TelemetryConfig {
+	telemetryCfg := config.Default().Telemetry
+	telemetryCfg.ServiceName = "irtop"
+	if endpoint := os.Getenv("OTEL_EXPORTER_OTLP_ENDPOINT"); endpoint != "" {
+		telemetryCfg.Enabled = true
+		telemetryCfg.OTLPEndpoint = endpoint
+		telemetryCfg.Exporter.Endpoint = endpoint
+	}
+	if protocol := os.Getenv("OTEL_EXPORTER_OTLP_PROTOCOL"); protocol != "" {
+		telemetryCfg.OTLPProtocol = protocol
+		telemetryCfg.Exporter.Protocol = protocol
+	}
+	if serviceName := os.Getenv("OTEL_SERVICE_NAME"); serviceName != "" {
+		telemetryCfg.ServiceName = serviceName
+	}
+	return telemetryCfg
+}
+
 func loadProfilesForFlags(configPath, profileName, server string) (irtop.ProfileSet, error) {
 	profiles, err := irtop.LoadProfiles(configPath)
 	if err == nil {
@@ -148,13 +153,10 @@ func loadProfilesForFlags(configPath, profileName, server string) (irtop.Profile
 	if configPath != "" || profileName != "" || server == "" || !irtop.IsMissingDefaultConfig(err) {
 		return irtop.ProfileSet{}, err
 	}
+	cfg := irtop.DefaultConfig()
+	cfg.Server = server
 	return irtop.ProfileSet{Profiles: []irtop.Profile{{
-		Name: "cli",
-		Config: irtop.Config{
-			Server:      server,
-			Refresh:     5 * time.Second,
-			DefaultView: "overview",
-			Output:      "tui",
-		},
+		Name:   "cli",
+		Config: cfg,
 	}}}, nil
 }
