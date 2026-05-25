@@ -69,30 +69,73 @@ irtop --server http://localhost:8443 --output text
 
 ## Configuration
 
-`irtop` can load a YAML config file:
+`irtop` loads YAML configuration from `~/.ironroot/config` by default. The config directory is `~/.ironroot` and the default filename is `config`.
 
 ```bash
-irtop --config ~/.config/ironroot/irtop.yaml
+mkdir -p ~/.ironroot
+cp examples/irtop.config ~/.ironroot/config
+irtop
 ```
 
-Example:
+For quick local checks, `--server` can be used without creating `~/.ironroot/config` first:
+
+```bash
+irtop --server http://localhost:8443
+```
+
+Config example:
 
 ```yaml
-server: https://ironroot.example.com:8443
-token: read-only-admin-token
-ca_file: /path/to/root-ca.crt
-insecure_skip_verify: false
-refresh: 5s
-default_view: overview
-output: tui
+default_profile: local
+profiles:
+  local:
+    endpoint: http://localhost:8443
+    refresh: 5s
+    default_view: overview
+    output: tui
+  production:
+    endpoint: https://ironroot.example.com:8443
+    ca_file: ~/ironroot/root-ca.crt
+    refresh: 10s
+    default_view: security
+    output: tui
 ```
+
+When more than one profile is configured, `irtop` shows the active profile in the header and lets you switch profiles inside the TUI without restarting. Profile switches rebuild the API client and reload data for the newly selected profile.
+
+Use `--profile` to choose the startup profile instead of `default_profile`:
+
+```bash
+irtop --profile production
+irtop --config ./examples/irtop.config --profile local
+```
+
+Use `--config` only when you intentionally want a different YAML file:
+
+```bash
+irtop --config ./examples/irtop.config
+```
+
+The config file must use the `profiles` map. Each profile must include `server` or `endpoint`, plus `refresh`, `default_view`, and `output`. Unknown YAML fields, duplicate profile names, invalid profile shapes, invalid YAML, missing files, and missing required values are reported as startup errors.
+
+## TUI Controls
+
+| Key | Action |
+|---|---|
+| `p` | Open or close the profile selector. |
+| `up` / `down` | Move through profiles in the selector. |
+| `k` / `j` | Move through profiles in the selector. |
+| `enter` | Switch to the selected profile and reload data. |
+| `[` / `]` | Switch directly to the previous or next profile. |
+| `r` | Refresh the active profile. |
 
 ## Flags
 
 | Flag | Default | Description |
 |---|---:|---|
-| `--server` | `https://localhost:8443` | IronRoot API server URL. |
-| `--config` | empty | Optional `irtop` YAML config path. |
+| `--server` | config value | IronRoot API server URL. |
+| `--config` | `~/.ironroot/config` | Optional override for the default `irtop` YAML config path. |
+| `--profile` | `default_profile` | Profile to select at startup. |
 | `--ca-file` | empty | CA bundle used to verify HTTPS connections. |
 | `--refresh` | `5s` | Dashboard refresh interval. |
 | `--insecure-skip-verify` | `false` | Skip TLS certificate verification. |

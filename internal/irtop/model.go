@@ -28,27 +28,66 @@ const (
 )
 
 type snapshotMsg struct {
-	snapshot Snapshot
-	err      error
+	profileIndex int
+	snapshot     Snapshot
+	err          error
 }
 
 type tickMsg time.Time
 
+type loadState int
+
+const (
+	stateLoading loadState = iota
+	stateLoaded
+	stateEmpty
+	stateError
+)
+
 type Model struct {
-	client   *Client
-	refresh  time.Duration
-	view     View
-	snapshot Snapshot
-	err      error
-	width    int
-	height   int
+	client           *Client
+	profiles         []Profile
+	activeProfile    int
+	profileCursor    int
+	selectingProfile bool
+	refresh          time.Duration
+	view             View
+	snapshot         Snapshot
+	err              error
+	state            loadState
+	width            int
+	height           int
 }
 
 func NewModel(client *Client, refresh time.Duration, initial View) Model {
 	if refresh <= 0 {
 		refresh = 5 * time.Second
 	}
-	return Model{client: client, refresh: refresh, view: initial}
+	return Model{client: client, refresh: refresh, view: initial, state: stateLoading}
+}
+
+func NewProfileModel(profiles ProfileSet) Model {
+	if len(profiles.Profiles) == 0 {
+		m := NewModel(nil, 5*time.Second, ViewOverview)
+		m.err = fmt.Errorf("no irtop profiles configured")
+		m.state = stateError
+		return m
+	}
+	active := profiles.Active
+	if active < 0 || active >= len(profiles.Profiles) {
+		active = 0
+	}
+	cfg := profiles.Profiles[active].Config
+	client, err := NewClientChecked(cfg)
+	m := NewModel(client, cfg.Refresh, ParseView(cfg.DefaultView))
+	m.profiles = profiles.Profiles
+	m.activeProfile = active
+	m.profileCursor = active
+	if err != nil {
+		m.err = err
+		m.state = stateError
+	}
+	return m
 }
 
 func ParseView(name string) View {
@@ -90,9 +129,25 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.width = msg.Width
 		m.height = msg.Height
 	case tea.KeyMsg:
+		if m.selectingProfile {
+			return m.updateProfileSelector(msg)
+		}
 		switch msg.String() {
 		case "q", "ctrl+c":
 			return m, tea.Quit
+		case "p":
+			if len(m.profiles) > 1 {
+				m.selectingProfile = true
+				m.profileCursor = m.activeProfile
+			}
+		case "[":
+			if len(m.profiles) > 1 {
+				return m.activateProfile((m.activeProfile - 1 + len(m.profiles)) % len(m.profiles))
+			}
+		case "]":
+			if len(m.profiles) > 1 {
+				return m.activateProfile((m.activeProfile + 1) % len(m.profiles))
+			}
 		case "?", "esc":
 			if m.view == ViewHelp {
 				m.view = ViewOverview
@@ -123,23 +178,44 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tickMsg:
 		return m, tea.Batch(m.refreshNow(), tick(m.refresh))
 	case snapshotMsg:
+		if msg.profileIndex != m.activeProfile {
+			return m, nil
+		}
 		m.err = msg.err
 		if msg.err == nil {
 			m.snapshot = msg.snapshot
+			if snapshotEmpty(msg.snapshot) {
+				m.state = stateEmpty
+			} else {
+				m.state = stateLoaded
+			}
+		} else if m.snapshot.UpdatedAt.IsZero() {
+			m.state = stateError
 		}
 	}
 	return m, nil
 }
 
 func (m Model) View() string {
+	if m.selectingProfile {
+		return m.frame(m.profileSelectorView())
+	}
 	body := m.renderBody()
-	if m.err != nil {
+	if m.err != nil && m.state != stateError {
 		body += "\n\n" + alertBox(m.contentWidth(), "API error", m.err.Error())
 	}
 	return m.frame(body)
 }
 
 func (m Model) renderBody() string {
+	switch m.state {
+	case stateLoading:
+		return m.loadingView()
+	case stateError:
+		return m.startupErrorView()
+	case stateEmpty:
+		return m.emptyView()
+	}
 	switch m.view {
 	case ViewCertificates:
 		return m.certificatesView()
@@ -173,7 +249,11 @@ func (m Model) frame(content string) string {
 	header := m.header(innerWidth)
 	tabs := m.tabs(innerWidth)
 	body := appStyle.Width(innerWidth).Height(bodyHeight).MaxWidth(innerWidth).Render(content)
-	footer := footerStyle.Width(innerWidth).Render(" q quit  ? help  r refresh  1-9 views  / filter  s sort  enter details")
+	footerText := " q quit  ? help  r refresh  1-9 views"
+	if len(m.profiles) > 1 {
+		footerText += "  p profiles  [ ] switch"
+	}
+	footer := footerStyle.Width(innerWidth).Render(footerText)
 	screen := strings.Join([]string{header, tabs, body, footer}, "\n")
 	return appStyle.Width(m.width).Height(m.height).Padding(0, 2).Render(screen)
 }
@@ -186,8 +266,9 @@ func (m Model) header(width int) string {
 	if !m.snapshot.UpdatedAt.IsZero() {
 		updated = m.snapshot.UpdatedAt.Format("15:04:05")
 	}
+	profile := m.activeProfileName()
 	left := " IRONROOT TOP "
-	mid := fmt.Sprintf(" %s  version %s  api %s/%s ", statusBadge(status), version, empty(o.Server.APIHealth, "unknown"), empty(o.Server.Readiness, "unknown"))
+	mid := fmt.Sprintf(" %s  profile %s  version %s  api %s/%s ", statusBadge(status), titleStyle.Render(profile), version, empty(o.Server.APIHealth, "unknown"), empty(o.Server.Readiness, "unknown"))
 	right := subtleStyle.Render("updated " + updated)
 	gap := max(1, width-lipgloss.Width(left)-lipgloss.Width(mid)-lipgloss.Width(right))
 	return headerStyle.Width(width).Render(titleStyle.Render(left) + mid + strings.Repeat(" ", gap) + right)
@@ -213,21 +294,146 @@ func (m Model) contentWidth() int {
 }
 
 func (m Model) refreshNow() tea.Cmd {
+	client := m.client
+	profileIndex := m.activeProfile
+	view := m.view
 	return func() tea.Msg {
+		if client == nil {
+			return snapshotMsg{profileIndex: profileIndex, err: fmt.Errorf("active profile %q is not usable", m.activeProfileName())}
+		}
 		ctx, span := otel.Tracer("github.com/parisnakitakejser/ironroot/irtop").Start(context.Background(), "irtop.refresh")
 		start := time.Now()
-		snapshot, err := m.client.Snapshot(ctx)
-		span.SetAttributes(attribute.String("view", viewName(m.view)), attribute.Float64("duration_ms", float64(time.Since(start).Milliseconds())))
+		snapshot, err := client.Snapshot(ctx)
+		span.SetAttributes(attribute.String("view", viewName(view)), attribute.String("profile", m.activeProfileName()), attribute.Float64("duration_ms", float64(time.Since(start).Milliseconds())))
 		if err != nil {
 			span.RecordError(err)
 		}
 		span.End()
-		return snapshotMsg{snapshot: snapshot, err: err}
+		return snapshotMsg{profileIndex: profileIndex, snapshot: snapshot, err: err}
 	}
+}
+
+func (m Model) updateProfileSelector(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
+	switch msg.String() {
+	case "q", "ctrl+c":
+		return m, tea.Quit
+	case "esc", "p":
+		m.selectingProfile = false
+	case "up", "k":
+		if len(m.profiles) > 0 {
+			m.profileCursor = (m.profileCursor - 1 + len(m.profiles)) % len(m.profiles)
+		}
+	case "down", "j":
+		if len(m.profiles) > 0 {
+			m.profileCursor = (m.profileCursor + 1) % len(m.profiles)
+		}
+	case "enter":
+		m.selectingProfile = false
+		return m.activateProfile(m.profileCursor)
+	}
+	return m, nil
+}
+
+func (m Model) activateProfile(index int) (tea.Model, tea.Cmd) {
+	if index < 0 || index >= len(m.profiles) || index == m.activeProfile {
+		return m, nil
+	}
+	cfg := m.profiles[index].Config
+	client, err := NewClientChecked(cfg)
+	m.client = client
+	m.activeProfile = index
+	m.profileCursor = index
+	m.refresh = cfg.Refresh
+	m.view = ParseView(cfg.DefaultView)
+	m.snapshot = Snapshot{}
+	m.err = err
+	if err != nil {
+		m.state = stateError
+		return m, nil
+	}
+	m.state = stateLoading
+	return m, m.refreshNow()
 }
 
 func tick(d time.Duration) tea.Cmd {
 	return tea.Tick(d, func(t time.Time) tea.Msg { return tickMsg(t) })
+}
+
+func (m Model) loadingView() string {
+	lines := []string{
+		"Loading IronRoot status...",
+		"",
+		"Profile: " + m.activeProfileName(),
+		"Server:  " + empty(m.activeConfig().Server, "not configured"),
+	}
+	return panel(m.contentWidth(), "Loading", strings.Join(lines, "\n"))
+}
+
+func (m Model) startupErrorView() string {
+	body := "Startup failed before irtop could display data."
+	if m.err != nil {
+		body += "\n\n" + m.err.Error()
+	}
+	body += "\n\nPress r to retry, p to switch profiles, or q to quit."
+	return alertBox(m.contentWidth(), "Startup Error", body)
+}
+
+func (m Model) emptyView() string {
+	return panel(m.contentWidth(), "No Data", strings.Join([]string{
+		"IronRoot returned an empty status snapshot.",
+		"",
+		"Press r to refresh or p to switch profiles.",
+	}, "\n"))
+}
+
+func (m Model) profileSelectorView() string {
+	if len(m.profiles) == 0 {
+		return alertBox(m.contentWidth(), "Profiles", "No profiles are configured.")
+	}
+	lines := []string{"Use up/down or k/j to choose a profile. Press enter to switch."}
+	lines = append(lines, "")
+	for i, profile := range m.profiles {
+		cursor := "  "
+		if i == m.profileCursor {
+			cursor = "> "
+		}
+		active := ""
+		if i == m.activeProfile {
+			active = " active"
+		}
+		line := fmt.Sprintf("%s%-18s %s%s", cursor, profile.Name, profile.Config.Server, active)
+		if i == m.profileCursor {
+			line = activeTabStyle.Render(line)
+		}
+		lines = append(lines, line)
+	}
+	return panel(m.contentWidth(), "Profiles", strings.Join(lines, "\n"))
+}
+
+func (m Model) activeProfileName() string {
+	if len(m.profiles) == 0 || m.activeProfile < 0 || m.activeProfile >= len(m.profiles) {
+		return "default"
+	}
+	return m.profiles[m.activeProfile].Name
+}
+
+func (m Model) activeConfig() Config {
+	if len(m.profiles) == 0 || m.activeProfile < 0 || m.activeProfile >= len(m.profiles) {
+		return Config{}
+	}
+	return m.profiles[m.activeProfile].Config
+}
+
+func snapshotEmpty(snapshot Snapshot) bool {
+	return snapshot.Overview.Server.Status == "" &&
+		snapshot.Server.Status == "" &&
+		len(snapshot.Certificates) == 0 &&
+		len(snapshot.Enrollments) == 0 &&
+		len(snapshot.Tokens) == 0 &&
+		snapshot.CA.ChainStatus == "" &&
+		snapshot.Security.Status == "" &&
+		snapshot.Telemetry.ExporterStatus == "" &&
+		len(snapshot.Audit) == 0
 }
 
 func (m Model) overviewView() string {
@@ -369,6 +575,8 @@ func (m Model) helpView() string {
 		"7       telemetry",
 		"8       audit log",
 		"9       server",
+		"p       profile selector",
+		"[ / ]   previous / next profile",
 		"/       search/filter (planned)",
 		"s       sort (planned)",
 		"enter   details (planned)",

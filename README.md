@@ -143,10 +143,37 @@ IronRoot is observability-first. The server, admin CLI, client CLI, REST API, en
 `irtop` provides a read-only terminal dashboard for IronRoot administrators:
 
 ```bash
+mkdir -p ~/.ironroot
+cp examples/irtop.config ~/.ironroot/config
+irtop
 irtop --server http://localhost:8443
 irtop --server http://localhost:8443 --output text
 irtop --server https://ironroot.example.com:8443 --ca-file ./root-ca.crt
 ```
+
+By default, `irtop` reads YAML configuration from `~/.ironroot/config`. The default directory is `~/.ironroot` and the default filename is `config`; use `--config` only when you intentionally want a different file. For quick local checks, `irtop --server http://localhost:8443` works even before a config file exists. The config uses a `profiles` map; each profile must include `server` or `endpoint`, plus `refresh`, `default_view`, and `output`.
+
+The config is profile-based:
+
+```yaml
+default_profile: local
+profiles:
+  local:
+    endpoint: http://localhost:8443
+    refresh: 5s
+    default_view: overview
+    output: tui
+  production:
+    endpoint: https://ironroot.example.com:8443
+    ca_file: ~/ironroot/root-ca.crt
+    refresh: 10s
+    default_view: security
+    output: tui
+```
+
+`default_profile` selects the startup profile. Use `irtop --profile production` to start with another profile without editing the config file.
+
+When multiple profiles are configured, the active profile is shown in the header. Press `p` to open the profile selector, use `up`/`down` or `k`/`j`, and press `enter` to switch without restarting. Press `[` or `]` to move directly to the previous or next profile.
 
 It shows server health, CA health, certificates, enrollments, tokens, security status, telemetry status, and recent audit events without exposing private keys or token secret values.
 

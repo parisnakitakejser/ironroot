@@ -17,6 +17,7 @@ import (
 func main() {
 	var (
 		configPath         string
+		profileName        string
 		server             string
 		caFile             string
 		refresh            time.Duration
@@ -27,7 +28,8 @@ func main() {
 
 	flags := flag.NewFlagSet("irtop", flag.ExitOnError)
 	flags.StringVar(&server, "server", "", "IronRoot API server URL")
-	flags.StringVar(&configPath, "config", "", "irtop config file")
+	flags.StringVar(&configPath, "config", "", "irtop config file (default ~/.ironroot/config)")
+	flags.StringVar(&profileName, "profile", "", "profile name from the irtop config file")
 	flags.StringVar(&caFile, "ca-file", "", "CA bundle used to verify HTTPS connections")
 	flags.DurationVar(&refresh, "refresh", 0, "dashboard refresh interval")
 	flags.BoolVar(&insecureSkipVerify, "insecure-skip-verify", false, "skip TLS certificate verification")
@@ -35,7 +37,7 @@ func main() {
 	flags.StringVar(&output, "output", "", "output mode: tui or text")
 	flags.Usage = func() {
 		fmt.Fprintf(flags.Output(), "irtop - terminal monitoring UI for IronRoot\n\n")
-		fmt.Fprintf(flags.Output(), "Usage:\n  irtop --server http://localhost:8443\n  irtop --server https://ironroot.example.com:8443 --ca-file ./root-ca.crt\n  irtop --server http://localhost:8443 --output text\n\n")
+		fmt.Fprintf(flags.Output(), "Usage:\n  irtop\n  irtop --profile production\n  irtop --config ~/.ironroot/config --profile local\n  irtop --server http://localhost:8443 --output text\n\n")
 		fmt.Fprintf(flags.Output(), "Flags:\n")
 		flags.PrintDefaults()
 	}
@@ -44,11 +46,16 @@ func main() {
 		os.Exit(2)
 	}
 
-	cfg, err := irtop.LoadConfig(configPath)
+	profiles, err := loadProfilesForFlags(configPath, profileName, server)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Failed to load irtop config: %v\n", err)
 		os.Exit(2)
 	}
+	if err := profiles.Select(profileName); err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(2)
+	}
+	cfg := profiles.ActiveConfig()
 	if server != "" {
 		cfg.Server = server
 	}
@@ -69,6 +76,12 @@ func main() {
 	}
 	if cfg.Output == "" {
 		cfg.Output = "tui"
+	}
+	if cfg.Server == "" {
+		cfg.Server = server
+	}
+	if len(profiles.Profiles) > 0 {
+		profiles.Profiles[profiles.Active].Config = cfg
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -102,13 +115,13 @@ func main() {
 		fmt.Fprintln(os.Stderr, "Warning: TLS verification is disabled for this irtop session.")
 	}
 
-	client, err := irtop.NewClientChecked(cfg)
-	if err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		os.Exit(2)
-	}
 	switch cfg.Output {
 	case "text":
+		client, err := irtop.NewClientChecked(cfg)
+		if err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			os.Exit(2)
+		}
 		snapshot, err := client.Snapshot(ctx)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Failed to read IronRoot status: %v\n", err)
@@ -116,10 +129,7 @@ func main() {
 		}
 		fmt.Println(irtop.RenderText(snapshot))
 	case "tui", "":
-		program := tea.NewProgram(
-			irtop.NewModel(client, cfg.Refresh, irtop.ParseView(cfg.DefaultView)),
-			tea.WithAltScreen(),
-		)
+		program := tea.NewProgram(irtop.NewProfileModel(profiles), tea.WithAltScreen())
 		if _, err := program.Run(); err != nil {
 			fmt.Fprintf(os.Stderr, "irtop failed: %v\n", err)
 			os.Exit(1)
@@ -128,4 +138,23 @@ func main() {
 		fmt.Fprintf(os.Stderr, "Unsupported output mode %q. Use tui or text.\n", cfg.Output)
 		os.Exit(2)
 	}
+}
+
+func loadProfilesForFlags(configPath, profileName, server string) (irtop.ProfileSet, error) {
+	profiles, err := irtop.LoadProfiles(configPath)
+	if err == nil {
+		return profiles, nil
+	}
+	if configPath != "" || profileName != "" || server == "" || !irtop.IsMissingDefaultConfig(err) {
+		return irtop.ProfileSet{}, err
+	}
+	return irtop.ProfileSet{Profiles: []irtop.Profile{{
+		Name: "cli",
+		Config: irtop.Config{
+			Server:      server,
+			Refresh:     5 * time.Second,
+			DefaultView: "overview",
+			Output:      "tui",
+		},
+	}}}, nil
 }
