@@ -12,6 +12,35 @@
 
 IronRoot is a modern internal PKI platform for air-gapped environments, offline-root security, observable certificate operations, Kubernetes-native deployments, and self-hosted infrastructure.
 
+## Key Features
+
+IronRoot is built for running internal PKI in secure, offline, and self-hosted environments.
+
+### 🔒 Airgap-First Trust Segregation
+* **Offline Root Anchor:** Generate and store your Root CA completely offline.
+* **Online Intermediate CA:** Only the Intermediate CA private key resides on the online server, drastically reducing the compromise blast radius.
+* **Client-Side Key Generation:** Private keys are generated locally on workloads; only CSRs are sent over the network.
+
+### 📊 Observability-First PKI
+* **Native OpenTelemetry:** All components—server, admin CLI, client CLI, and database operations—natively emit correlated W3C traces, metrics, and JSON logs.
+* **Real-time Terminal Dashboard (`irtop`):** Monitor server health, certificate lifecycles, and audit logs with a lightweight, read-only TUI directly on the console.
+* **Rich Prometheus Metrics:** Track API latencies, enrollment failures, and database states out of the box.
+
+### 🧬 Multi-Root & Multi-Intermediate CA Architecture
+* **Environment Isolation:** Model multiple independent Root CAs and Intermediate CAs to isolate production, staging, development, and lab environments.
+* **State Management:** Fully track active, disabled, retired, pending, and testing states for all certificate authorities.
+* **Token-Based Least Privilege:** Enforce short-lived request tokens mapped to specific Intermediate CA policies, defining allowed DNS/SAN patterns, TTLs, and issuance limits.
+
+### 🛠️ Built-in Security Guardrails
+* **Interactive Bootstrapping:** Generate security guides tailored for offline CA setup, backups, and audits.
+* **Automated Hygiene Checks:** Run `ironroot-admin security-check` to instantly audit file permissions, private key encryption, and audit logging compliance.
+* **Immutable Audit Trail:** Log all enrollment, certificate, and administrative events with integrated telemetry context.
+
+### 📦 Cloud-Native & Self-Hosted
+* **Zero-Dependency Binaries:** Fast, lightweight compiled Go binaries for all operating systems (Linux, macOS, amd64, arm64).
+* **Kubernetes-Native:** Deploy effortlessly using official Helm charts and Kustomize manifests.
+* **Podman & Docker Ready:** Out-of-the-box local composable setups for Nginx, Caddy, and Prometheus stacks.
+
 ## Documentation maturity
 
 IronRoot is currently Alpha-stage. Documentation pages use maturity badges so readers can quickly see how complete and validated a workflow is:
@@ -251,6 +280,24 @@ The public documentation website is published from the generated `site/` output 
 Website: `https://parisnakitakejser.github.io/ironroot/`
 
 Contributors should edit source docs under `docs/`, preview with `just docs-serve`, and run `just docs-build` before opening a pull request. Do not edit the generated `website` branch by hand.
+
+## Roadmap
+
+IronRoot is in active development. Below is our current feature roadmap. For the full roadmap or to request a new feature, see [ROADMAP.md](ROADMAP.md).
+
+### 🚀 Near-Term (Planned)
+- [ ] **PostgreSQL backend** – Support high-availability, clustered deployments alongside SQLite.
+- [ ] **CRL & OCSP support** – Real-time certificate validation and revocation checking.
+- [ ] **mTLS support** – Secure server-to-agent and server-to-admin communication.
+- [ ] **Admin API for token lifecycle** – Programmatically manage bootstrap and enrollment tokens.
+- [ ] **CA generation & retirement workflows** – Automated promotion, rollover, and graceful retirement of issuing intermediates.
+
+### 🔮 Future Ideas
+- **SPIFFE & cert-manager integration** – Native Kubernetes credential and zero-trust identity provisioning.
+- **TPM & Hardware-backed identities** – Secure private key storage using local hardware modules.
+- **Airgap package synchronization** – Streamlined off-grid distribution of binaries, containers, and charts.
+- **SSH certificate support** – Host and user SSH key management built directly into the CA.
+- **GitOps integration & Multi-cluster support** – Continuous delivery workflows for multi-region PKI.
 
 ## Project links
 
