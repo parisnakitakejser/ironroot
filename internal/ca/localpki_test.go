@@ -2,7 +2,6 @@ package ca
 
 import (
 	"context"
-	"crypto/x509"
 	"encoding/pem"
 	"os"
 	"path/filepath"
@@ -10,6 +9,7 @@ import (
 	"time"
 
 	"github.com/parisnakitakejser/ironroot/internal/config"
+	icrypto "github.com/parisnakitakejser/ironroot/internal/crypto"
 )
 
 func TestCreateRootAdvancedDefaults(t *testing.T) {
@@ -42,7 +42,7 @@ func TestCreateRootAdvancedDefaults(t *testing.T) {
 		t.Fatal(err)
 	}
 	block, _ := pem.Decode(keyPEM)
-	if block == nil || !x509.IsEncryptedPEMBlock(block) {
+	if block == nil || !icrypto.IsEncryptedPEMBlockGCM(block) {
 		t.Fatalf("expected encrypted root private key, got block %#v", block)
 	}
 	info, err := InspectCertificates([]string{root.CertPath})

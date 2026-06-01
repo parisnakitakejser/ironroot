@@ -67,3 +67,11 @@ sequenceDiagram
 - Use Kubernetes Secrets with narrowly scoped access in Kubernetes.
 - Back up the Intermediate key, certificate, chain, and database together.
 - Never bake the Intermediate private key into a container image.
+
+## Cryptographic Encryption Standard
+
+To protect CA and client private keys at rest, IronRoot uses state-of-the-art authenticated encryption:
+
+- **Algorithm:** AES-256-GCM (Galois/Counter Mode) to ensure both confidentiality and ciphertext authentication (tamper protection).
+- **Key Derivation:** PBKDF2 (SHA-256) with 100,000 iterations and a secure, cryptographically random salt to derive a 256-bit encryption key from passwords.
+- **Envelope Formatting:** Cryptographic parameters (salt, GCM nonce, and iterations count) are stored securely as standard PEM header key-value pairs inside the generated `ENCRYPTED PRIVATE KEY` block. This approach avoids using deprecated, legacy PEM block encryption schemes (like RFC 1423 / 3DES) which are vulnerable to padding oracle attacks.

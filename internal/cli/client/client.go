@@ -30,6 +30,7 @@ import (
 
 	"github.com/parisnakitakejser/ironroot/internal/ca"
 	"github.com/parisnakitakejser/ironroot/internal/config"
+	icrypto "github.com/parisnakitakejser/ironroot/internal/crypto"
 	"github.com/parisnakitakejser/ironroot/internal/telemetry"
 	apiclient "github.com/parisnakitakejser/ironroot/pkg/client"
 )
@@ -254,7 +255,7 @@ func generateKeyAndCSR(commonName string, dnsNames []string, keyType, curve stri
 	meta := keyMetadata{Type: strings.ToLower(keyType), Encrypted: password != ""}
 	switch meta.Type {
 	case "ecdsa":
-		c := elliptic.P256()
+		var c elliptic.Curve
 		meta.Curve = "p256"
 		switch strings.ToLower(curve) {
 		case "p256", "p-256", "":
@@ -314,12 +315,14 @@ func marshalPrivateKeyPEM(signer crypto.Signer, password string) ([]byte, error)
 	if err != nil {
 		return nil, err
 	}
-	block := &pem.Block{Type: "PRIVATE KEY", Bytes: der}
+	var block *pem.Block
 	if password != "" {
-		block, err = x509.EncryptPEMBlock(rand.Reader, "PRIVATE KEY", der, []byte(password), x509.PEMCipherAES256)
+		block, err = icrypto.EncryptPrivateKeyGCM(der, password)
 		if err != nil {
 			return nil, err
 		}
+	} else {
+		block = &pem.Block{Type: "PRIVATE KEY", Bytes: der}
 	}
 	return pem.EncodeToMemory(block), nil
 }

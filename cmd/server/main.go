@@ -47,7 +47,11 @@ func main() {
 		logger.Error("configure telemetry", "error", err)
 		os.Exit(1)
 	}
-	defer shutdownTelemetry(context.Background())
+	defer func() {
+		if err := shutdownTelemetry(context.Background()); err != nil {
+			slog.Error("failed to shutdown telemetry", "error", err)
+		}
+	}()
 
 	store, err := db.Open(ctx, cfg.Database)
 	if err != nil {

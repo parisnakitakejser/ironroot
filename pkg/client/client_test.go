@@ -14,7 +14,7 @@ import (
 func TestTraceContextPropagation(t *testing.T) {
 	otel.SetTextMapPropagator(propagation.TraceContext{})
 	tp := sdktrace.NewTracerProvider(sdktrace.WithSampler(sdktrace.AlwaysSample()))
-	defer tp.Shutdown(context.Background())
+	defer func() { _ = tp.Shutdown(context.Background()) }()
 	otel.SetTracerProvider(tp)
 	seen := ""
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

@@ -20,6 +20,8 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
+
+	icrypto "github.com/parisnakitakejser/ironroot/internal/crypto"
 )
 
 const (
@@ -324,8 +326,8 @@ func readPrivateKey(path, password string) (crypto.Signer, error) {
 		return nil, fmt.Errorf("%s does not contain a private key PEM block", path)
 	}
 	der := block.Bytes
-	if x509.IsEncryptedPEMBlock(block) {
-		der, err = x509.DecryptPEMBlock(block, []byte(password))
+	if icrypto.IsEncryptedPEMBlockGCM(block) {
+		der, err = icrypto.DecryptPrivateKeyGCM(block, password)
 		if err != nil {
 			return nil, err
 		}
@@ -349,15 +351,17 @@ func writePKCS8Key(path string, key crypto.Signer, password string, encrypt bool
 	if err != nil {
 		return err
 	}
-	block := &pem.Block{Type: "PRIVATE KEY", Bytes: der}
+	var block *pem.Block
 	if encrypt {
 		if password == "" {
 			return errors.New("private key password is required when encryption is enabled")
 		}
-		block, err = x509.EncryptPEMBlock(rand.Reader, "PRIVATE KEY", der, []byte(password), x509.PEMCipherAES256)
+		block, err = icrypto.EncryptPrivateKeyGCM(der, password)
 		if err != nil {
 			return err
 		}
+	} else {
+		block = &pem.Block{Type: "PRIVATE KEY", Bytes: der}
 	}
 	return os.WriteFile(path, pem.EncodeToMemory(block), 0o600)
 }

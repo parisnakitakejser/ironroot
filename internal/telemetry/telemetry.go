@@ -47,7 +47,7 @@ func Configure(ctx context.Context, cfg config.TelemetryConfig, fallbackName str
 		name = fallbackName
 	}
 	res, err := resource.Merge(resource.Default(), resource.NewWithAttributes(
-		semconv.SchemaURL,
+		"",
 		semconv.ServiceName(name),
 		semconv.ServiceVersion(cfg.ServiceVersion),
 		semconv.DeploymentEnvironmentName(cfg.DeploymentEnvironment),
