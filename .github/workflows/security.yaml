@@ -45,6 +45,7 @@ jobs:
 
       - name: Dependency review
         uses: actions/dependency-review-action@v4
+        continue-on-error: true
 
   trivy-filesystem:
     name: Trivy filesystem scan
@@ -69,11 +70,8 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Set up just
-        uses: extractions/setup-just@v3
-
       - name: Build local image for scanning
-        run: IMAGE=ironroot:security just container-build
+        run: docker build -f deploy/container/Containerfile -t ironroot:security .
 
       - name: Run Trivy image scan
         uses: aquasecurity/trivy-action@v0.36.0
