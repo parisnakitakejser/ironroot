@@ -159,3 +159,15 @@ helm-test:
 coverage:
     {{go}} test ./... -coverprofile=coverage.out
     {{go}} tool cover -html=coverage.out -o coverage.html
+
+# Package all release artifacts, charts, binaries, and documentation for offline air-gapped distribution.
+airgap-package: build-all helm-package docs-deploy-local
+    @echo "Packaging cohesive air-gap distribution bundle..."
+    mkdir -p dist/airgap-bundle
+    mkdir -p dist/airgap-bundle/binaries
+    cp -r dist/releases/* dist/airgap-bundle/binaries/ 2>/dev/null || true
+    cp -r dist/charts dist/airgap-bundle/charts
+    cp -r site dist/airgap-bundle/docs
+    tar -C dist -czf dist/ironroot-airgap-bundle.tar.gz airgap-bundle
+    rm -rf dist/airgap-bundle
+    @echo "Cohesive air-gap distribution package created successfully: dist/ironroot-airgap-bundle.tar.gz"

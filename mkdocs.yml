@@ -59,6 +59,7 @@ nav:
           - Components: architecture/components.md
           - Trust Model: architecture/trust-model.md
           - Security Boundaries: architecture/trust-boundaries.md
+          - Zero-Trust & Air-Gap: architecture/zero-trust-airgap.md
           - Deployment Models: architecture/deployment-models.md
       - PKI Model:
           - PKI Concepts: pki-concepts/index.md
