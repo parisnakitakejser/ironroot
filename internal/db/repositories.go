@@ -5,6 +5,7 @@ import (
 	"crypto/sha256"
 	"database/sql"
 	"encoding/hex"
+	"errors"
 	"time"
 
 	"github.com/parisnakitakejser/ironroot/internal/telemetry"
@@ -229,6 +230,9 @@ func (s *SQLStore) RevokeCertificate(ctx context.Context, r RevokedCertificate) 
 }
 
 func (s *SQLStore) CreateAuditLog(ctx context.Context, a AuditLog) error {
+	if s == nil || s.db == nil {
+		return errors.New("store is uninitialized")
+	}
 	ctx, span := telemetry.StartSpan(ctx, "db.create_audit_log")
 	started := time.Now()
 
@@ -262,6 +266,9 @@ func (s *SQLStore) CreateAuditLog(ctx context.Context, a AuditLog) error {
 }
 
 func (s *SQLStore) ListAuditLogs(ctx context.Context, limit int) ([]AuditLog, error) {
+	if s == nil || s.db == nil {
+		return nil, errors.New("store is uninitialized")
+	}
 	ctx, span := telemetry.StartSpan(ctx, "db.list_audit_logs")
 	started := time.Now()
 	if limit <= 0 || limit > 500 {

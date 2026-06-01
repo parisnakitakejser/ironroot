@@ -18,6 +18,7 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 
 	"github.com/parisnakitakejser/ironroot/internal/config"
+	"github.com/parisnakitakejser/ironroot/internal/db"
 )
 
 type HostCheck struct{}
@@ -398,6 +399,16 @@ func (AuditCheck) Run(_ context.Context, _ Target) Result {
 	return r
 }
 
+func isNilStore(s db.Store) bool {
+	if s == nil {
+		return true
+	}
+	if v, ok := s.(*db.SQLStore); ok && v == nil {
+		return true
+	}
+	return false
+}
+
 type AuditChainCheck struct{}
 
 func (AuditChainCheck) ID() string       { return "audit.ledger_chain_valid" }
@@ -405,7 +416,7 @@ func (AuditChainCheck) Category() string { return "audit" }
 func (AuditChainCheck) Run(ctx context.Context, target Target) Result {
 	r := baseResult("audit.ledger_chain_valid", "Audit log ledger chain is cryptographically secure", "audit", SeverityCritical)
 
-	if target.Store == nil {
+	if target.Store == nil || isNilStore(target.Store) {
 		r.Status = StatusWarn
 		r.Message = "Storage backend is not available to verify the audit ledger."
 		r.Remediation = "Run security-check in an environment connected to the SQLite or PostgreSQL database."
