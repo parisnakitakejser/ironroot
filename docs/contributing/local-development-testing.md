@@ -50,11 +50,13 @@ Run vet:
 just vet
 ```
 
-Run lint if installed:
+Run lint (requires `golangci-lint` v2.x):
 
 ```bash
 just lint
 ```
+
+*Note: The project uses `golangci-lint` v2.x with the modern `.golangci.yml` v2 schema. All code changes are expected to compile with 0 static analysis or code quality warnings.*
 
 ## Docs
 

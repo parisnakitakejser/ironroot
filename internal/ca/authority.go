@@ -16,6 +16,7 @@ import (
 	"time"
 
 	"github.com/parisnakitakejser/ironroot/internal/config"
+	icrypto "github.com/parisnakitakejser/ironroot/internal/crypto"
 	"github.com/parisnakitakejser/ironroot/internal/telemetry"
 )
 
@@ -69,11 +70,11 @@ func LoadAuthority(cfg config.PKIConfig) (*FileAuthority, error) {
 		return nil, err
 	}
 	var key any
-	if x509.IsEncryptedPEMBlock(keyBlock) {
+	if icrypto.IsEncryptedPEMBlockGCM(keyBlock) {
 		if cfg.IntermediateKeyPass == "" {
 			return nil, errors.New("encrypted intermediate key requires pki.intermediate_key_pass")
 		}
-		der, err := x509.DecryptPEMBlock(keyBlock, []byte(cfg.IntermediateKeyPass))
+		der, err := icrypto.DecryptPrivateKeyGCM(keyBlock, cfg.IntermediateKeyPass)
 		if err != nil {
 			return nil, err
 		}
@@ -101,7 +102,7 @@ func LoadAuthority(cfg config.PKIConfig) (*FileAuthority, error) {
 }
 
 func (a *FileAuthority) SignCSR(ctx context.Context, csrPEM string, dnsNames []string, lifetime time.Duration) (Issued, error) {
-	ctx, span := telemetry.StartSpan(ctx, "ca.sign_csr")
+	_, span := telemetry.StartSpan(ctx, "ca.sign_csr")
 	block, _ := pem.Decode([]byte(csrPEM))
 	if block == nil {
 		err := errors.New("invalid CSR PEM")
