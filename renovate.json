@@ -1,0 +1,30 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:recommended"
+  ],
+  "prHourlyLimit": 2,
+  "prConcurrentLimit": 10,
+  "dependencyDashboard": true,
+  "packageRules": [
+    {
+      "matchPackageNames": ["go"],
+      "enabled": false
+    },
+    {
+      "groupName": "GitHub Actions",
+      "matchManagers": ["github-actions"],
+      "pinDigests": true
+    },
+    {
+      "groupName": "Go Dependencies",
+      "matchManagers": ["gomod"],
+      "matchUpdateTypes": ["minor", "patch"]
+    },
+    {
+      "groupName": "Python Documentation Dependencies",
+      "matchManagers": ["pip_requirements"],
+      "matchUpdateTypes": ["minor", "patch"]
+    }
+  ]
+}
