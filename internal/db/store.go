@@ -114,6 +114,8 @@ type AuditLog struct {
 	Target    string
 	Metadata  string
 	TraceID   string
+	PrevHash  string
+	Hash      string
 	CreatedAt time.Time
 }
 

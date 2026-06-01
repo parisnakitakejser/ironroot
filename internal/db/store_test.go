@@ -83,3 +83,74 @@ func TestMultiCARepositories(t *testing.T) {
 		t.Fatalf("unexpected policies: %#v", policies)
 	}
 }
+
+func TestAuditLogCryptographicChaining(t *testing.T) {
+	store, err := Open(context.Background(), config.DatabaseConfig{Driver: "sqlite", DSN: "file:" + t.TempDir() + "/test.db?_foreign_keys=on"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer store.Close()
+	if err := store.Migrate(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+
+	now := time.Now().UTC()
+	log1 := AuditLog{
+		ID:        "log-1",
+		Action:    "ca.create-root",
+		Actor:     "admin",
+		Target:    "root-ca",
+		Metadata:  "{}",
+		TraceID:   "trace-id-1",
+		CreatedAt: now,
+	}
+	if err := store.CreateAuditLog(context.Background(), log1); err != nil {
+		t.Fatal(err)
+	}
+
+	log2 := AuditLog{
+		ID:        "log-2",
+		Action:    "ca.sign-intermediate",
+		Actor:     "admin",
+		Target:    "intermediate-ca",
+		Metadata:  "{}",
+		TraceID:   "trace-id-2",
+		CreatedAt: now.Add(time.Second),
+	}
+	if err := store.CreateAuditLog(context.Background(), log2); err != nil {
+		t.Fatal(err)
+	}
+
+	logs, err := store.ListAuditLogs(context.Background(), 10)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if len(logs) != 2 {
+		t.Fatalf("expected 2 audit logs, got %d", len(logs))
+	}
+
+	// ListAuditLogs returns log2 (latest) first because of ORDER BY created_at DESC
+	ret2 := logs[0]
+	ret1 := logs[1]
+
+	if ret1.ID != "log-1" || ret2.ID != "log-2" {
+		t.Fatalf("unexpected ordering: ret1 = %s, ret2 = %s", ret1.ID, ret2.ID)
+	}
+
+	if ret1.PrevHash != "" {
+		t.Fatalf("expected first log PrevHash to be empty, got %q", ret1.PrevHash)
+	}
+
+	if ret1.Hash == "" {
+		t.Fatal("expected first log Hash to be non-empty")
+	}
+
+	if ret2.PrevHash != ret1.Hash {
+		t.Fatalf("expected second log PrevHash (%q) to match first log Hash (%q)", ret2.PrevHash, ret1.Hash)
+	}
+
+	if ret2.Hash == "" {
+		t.Fatal("expected second log Hash to be non-empty")
+	}
+}

@@ -357,7 +357,18 @@ func securityCheck() *cobra.Command {
 			telemetry.RecordCommand(ctx, "security-check", start, err)
 			return ExitError{Code: 2, Err: err}
 		}
-		report := securitycheck.DefaultRunner().Run(ctx, securitycheck.Target{Config: cfg, ConfigPath: configPath, Now: time.Now().UTC()})
+		var store db.Store
+		if cfg.Database.Driver != "" {
+			var err error
+			store, err = db.Open(ctx, cfg.Database)
+			if err != nil {
+				slog.WarnContext(ctx, "failed to open database for security-check", "error", err)
+			} else {
+				defer store.Close()
+			}
+		}
+
+		report := securitycheck.DefaultRunner().Run(ctx, securitycheck.Target{Config: cfg, ConfigPath: configPath, Store: store, Now: time.Now().UTC()})
 		if err := securitycheck.Render(cmd.OutOrStdout(), report, format); err != nil {
 			telemetry.RecordCommand(ctx, "security-check", start, err)
 			return ExitError{Code: 2, Err: err}

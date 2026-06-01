@@ -32,6 +32,7 @@ func DefaultRunner() Runner {
 		APIBindCheck{},
 		TokenTTLCheck{},
 		AuditCheck{},
+		AuditChainCheck{},
 		TelemetryCheck{},
 		ContainerCheck{},
 		KubernetesCheck{},
