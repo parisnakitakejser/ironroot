@@ -2,7 +2,10 @@ package db
 
 import (
 	"context"
+	"crypto/sha256"
 	"database/sql"
+	"encoding/hex"
+	"errors"
 	"time"
 
 	"github.com/parisnakitakejser/ironroot/internal/telemetry"
@@ -227,22 +230,51 @@ func (s *SQLStore) RevokeCertificate(ctx context.Context, r RevokedCertificate) 
 }
 
 func (s *SQLStore) CreateAuditLog(ctx context.Context, a AuditLog) error {
+	if s == nil || s.db == nil {
+		return errors.New("store is uninitialized")
+	}
 	ctx, span := telemetry.StartSpan(ctx, "db.create_audit_log")
 	started := time.Now()
-	_, err := s.db.ExecContext(ctx, `INSERT INTO audit_logs(id, action, actor, target, metadata, trace_id, created_at) VALUES(?,?,?,?,?,?,?)`,
-		a.ID, a.Action, a.Actor, a.Target, a.Metadata, a.TraceID, a.CreatedAt)
+
+	// Retrieve the previous entry's hash
+	var lastHash string
+	err := s.db.QueryRowContext(ctx, `SELECT hash FROM audit_logs ORDER BY created_at DESC, id DESC LIMIT 1`).Scan(&lastHash)
+	if err != nil && err != sql.ErrNoRows {
+		telemetry.RecordDatabase(ctx, "create_audit_log", started, err)
+		telemetry.EndSpan(span, err)
+		return err
+	}
+
+	a.PrevHash = lastHash
+
+	// Compute current hash: SHA-256 of: prev_hash + action + actor + target + metadata + trace_id + created_at
+	h := sha256.New()
+	_, _ = h.Write([]byte(a.PrevHash))
+	_, _ = h.Write([]byte(a.Action))
+	_, _ = h.Write([]byte(a.Actor))
+	_, _ = h.Write([]byte(a.Target))
+	_, _ = h.Write([]byte(a.Metadata))
+	_, _ = h.Write([]byte(a.TraceID))
+	_, _ = h.Write([]byte(a.CreatedAt.Format(time.RFC3339)))
+	a.Hash = hex.EncodeToString(h.Sum(nil))
+
+	_, err = s.db.ExecContext(ctx, `INSERT INTO audit_logs(id, action, actor, target, metadata, trace_id, prev_hash, hash, created_at) VALUES(?,?,?,?,?,?,?,?,?)`,
+		a.ID, a.Action, a.Actor, a.Target, a.Metadata, a.TraceID, a.PrevHash, a.Hash, a.CreatedAt)
 	telemetry.RecordDatabase(ctx, "create_audit_log", started, err)
 	telemetry.EndSpan(span, err)
 	return err
 }
 
 func (s *SQLStore) ListAuditLogs(ctx context.Context, limit int) ([]AuditLog, error) {
+	if s == nil || s.db == nil {
+		return nil, errors.New("store is uninitialized")
+	}
 	ctx, span := telemetry.StartSpan(ctx, "db.list_audit_logs")
 	started := time.Now()
 	if limit <= 0 || limit > 500 {
 		limit = 100
 	}
-	rows, err := s.db.QueryContext(ctx, `SELECT id, action, actor, target, metadata, trace_id, created_at FROM audit_logs ORDER BY created_at DESC LIMIT ?`, limit)
+	rows, err := s.db.QueryContext(ctx, `SELECT id, action, actor, target, metadata, trace_id, prev_hash, hash, created_at FROM audit_logs ORDER BY created_at DESC LIMIT ?`, limit)
 	if err != nil {
 		telemetry.RecordDatabase(ctx, "list_audit_logs", started, err)
 		telemetry.EndSpan(span, err)
@@ -252,9 +284,12 @@ func (s *SQLStore) ListAuditLogs(ctx context.Context, limit int) ([]AuditLog, er
 	var out []AuditLog
 	for rows.Next() {
 		var a AuditLog
-		if err := rows.Scan(&a.ID, &a.Action, &a.Actor, &a.Target, &a.Metadata, &a.TraceID, &a.CreatedAt); err != nil {
+		var prevHash, hash sql.NullString
+		if err := rows.Scan(&a.ID, &a.Action, &a.Actor, &a.Target, &a.Metadata, &a.TraceID, &prevHash, &hash, &a.CreatedAt); err != nil {
 			return nil, err
 		}
+		a.PrevHash = prevHash.String
+		a.Hash = hash.String
 		out = append(out, a)
 	}
 	err = rows.Err()

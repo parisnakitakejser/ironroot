@@ -2,8 +2,10 @@ package securitycheck
 
 import (
 	"context"
+	"crypto/sha256"
 	"crypto/x509"
 	"database/sql"
+	"encoding/hex"
 	"encoding/pem"
 	"errors"
 	"net"
@@ -16,6 +18,7 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 
 	"github.com/parisnakitakejser/ironroot/internal/config"
+	"github.com/parisnakitakejser/ironroot/internal/db"
 )
 
 type HostCheck struct{}
@@ -393,6 +396,93 @@ func (AuditCheck) Run(_ context.Context, _ Target) Result {
 	r := baseResult("audit.enabled", "Audit logging is enabled", "audit", SeverityMedium)
 	r.Message = "Audit logging is part of the server write path for enrollment, issuance, renewal, and revocation."
 	r.Remediation = "Add retention policy controls before long-running production deployments."
+	return r
+}
+
+func isNilStore(s db.Store) bool {
+	if s == nil {
+		return true
+	}
+	if v, ok := s.(*db.SQLStore); ok && v == nil {
+		return true
+	}
+	return false
+}
+
+type AuditChainCheck struct{}
+
+func (AuditChainCheck) ID() string       { return "audit.ledger_chain_valid" }
+func (AuditChainCheck) Category() string { return "audit" }
+func (AuditChainCheck) Run(ctx context.Context, target Target) Result {
+	r := baseResult("audit.ledger_chain_valid", "Audit log ledger chain is cryptographically secure", "audit", SeverityCritical)
+
+	if target.Store == nil || isNilStore(target.Store) {
+		r.Status = StatusWarn
+		r.Message = "Storage backend is not available to verify the audit ledger."
+		r.Remediation = "Run security-check in an environment connected to the SQLite or PostgreSQL database."
+		return r
+	}
+
+	// Fetch a generous limit of audit logs for verification (e.g. 500)
+	logs, err := target.Store.ListAuditLogs(ctx, 500)
+	if err != nil {
+		if strings.Contains(err.Error(), "no such table") {
+			r.Status = StatusWarn
+			r.Message = "Audit log ledger cannot be verified because the database tables have not been created yet."
+			r.Remediation = "Initialize the server configuration and database migrations by running: ironroot-admin init-server"
+			return r
+		}
+		r.Status = StatusFail
+		r.Message = "Failed to retrieve audit log entries for cryptographic validation: " + err.Error()
+		r.Remediation = "Verify that the database permissions allow reading the audit_logs table."
+		return r
+	}
+
+	if len(logs) == 0 {
+		r.Status = StatusPass
+		r.Message = "No audit log entries exist yet; ledger chain is empty and valid."
+		r.Remediation = "Generate activity (e.g., generate a bootstrap token or enroll) to initialize the audit ledger."
+		return r
+	}
+
+	// ListAuditLogs returns newest (latest) first because of ORDER BY created_at DESC.
+	// Let's iterate in chronological order (oldest to newest) to verify the chain.
+	var lastHash string
+	for i := len(logs) - 1; i >= 0; i-- {
+		log := logs[i]
+
+		// 1. Verify PrevHash matches the previous entry's Hash
+		if log.PrevHash != lastHash {
+			r.Status = StatusFail
+			r.Message = "Cryptographic audit chain is broken! Hash mismatch at entry " + log.ID + ": expected previous hash " + lastHash + ", got " + log.PrevHash
+			r.Remediation = "CRITICAL: The audit log database has been tampered with or corrupted! Restore the database from a trusted, encrypted backup."
+			return r
+		}
+
+		// 2. Recalculate Hash and verify it matches the stored Hash
+		h := sha256.New()
+		_, _ = h.Write([]byte(log.PrevHash))
+		_, _ = h.Write([]byte(log.Action))
+		_, _ = h.Write([]byte(log.Actor))
+		_, _ = h.Write([]byte(log.Target))
+		_, _ = h.Write([]byte(log.Metadata))
+		_, _ = h.Write([]byte(log.TraceID))
+		_, _ = h.Write([]byte(log.CreatedAt.Format(time.RFC3339)))
+		recalculated := hex.EncodeToString(h.Sum(nil))
+
+		if log.Hash != recalculated {
+			r.Status = StatusFail
+			r.Message = "Audit ledger record signature verification failed for entry " + log.ID + ": signature recalculation mismatch."
+			r.Remediation = "CRITICAL: Audit log payload has been modified or corrupted! Recalculated hash does not match stored signature hash."
+			return r
+		}
+
+		lastHash = log.Hash
+	}
+
+	r.Status = StatusPass
+	r.Message = "Audit log ledger chain verified successfully. Unbroken cryptographically secured sequence."
+	r.Remediation = "No action required. The immutable audit log ledger is structurally sound."
 	return r
 }
 

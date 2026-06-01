@@ -110,6 +110,8 @@ var migrations = []string{
 		target TEXT,
 		metadata TEXT,
 		trace_id TEXT,
+		prev_hash TEXT,
+		hash TEXT,
 		created_at TIMESTAMP NOT NULL
 	);`,
 }
@@ -120,5 +122,8 @@ func (s *SQLStore) Migrate(ctx context.Context) error {
 			return err
 		}
 	}
+	// Safely add prev_hash and hash columns to existing legacy tables if missing
+	_, _ = s.db.ExecContext(ctx, `ALTER TABLE audit_logs ADD COLUMN prev_hash TEXT`)
+	_, _ = s.db.ExecContext(ctx, `ALTER TABLE audit_logs ADD COLUMN hash TEXT`)
 	return nil
 }

@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/parisnakitakejser/ironroot/internal/config"
+	"github.com/parisnakitakejser/ironroot/internal/db"
 )
 
 type Severity string
@@ -55,6 +56,7 @@ type Report struct {
 type Target struct {
 	Config     config.Config
 	ConfigPath string
+	Store      db.Store
 	Now        time.Time
 }
 
