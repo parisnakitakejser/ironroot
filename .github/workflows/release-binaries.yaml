@@ -1,0 +1,78 @@
+name: Release Binaries
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Release version tag (e.g., v1.0.0)"
+        required: false
+        default: "v0.1.0-dev"
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Compile and Package Binaries
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Set up just
+        uses: extractions/setup-just@v3
+
+      - name: Compile multi-platform binaries
+        run: just build-all
+
+      - name: Package binary releases
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p dist/releases
+          for platform in linux-amd64 linux-arm64 darwin-amd64 darwin-arm64; do
+            tar -C "dist/${platform}" -czf "dist/releases/ironroot-${platform}.tar.gz" \
+              ironroot-server ironroot-admin ironroot-client irtop
+          done
+          (cd dist/releases && sha256sum *.tar.gz > checksums.txt)
+
+      - name: Upload compiled run artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ironroot-binaries-${{ github.sha }}
+          path: |
+            dist/releases/*.tar.gz
+            dist/releases/checksums.txt
+          retention-days: 14
+
+      - name: Create GitHub Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          body: |
+            IronRoot cross-platform binary releases.
+
+            Download the compiled archive matching your host operating system and CPU architecture. No local compilation or dependencies are required:
+            
+            - **Linux AMD64 (Intel/AMD):** `ironroot-linux-amd64.tar.gz`
+            - **Linux ARM64 (Aarch64):** `ironroot-linux-arm64.tar.gz`
+            - **macOS ARM64 (Apple Silicon M1/M2/M3):** `ironroot-darwin-arm64.tar.gz`
+            - **macOS AMD64 (Intel Macs):** `ironroot-darwin-amd64.tar.gz`
+            
+            Validate the integrity of downloads using the accompanying `checksums.txt` file.
+          files: |
+            dist/releases/ironroot-linux-amd64.tar.gz
+            dist/releases/ironroot-linux-arm64.tar.gz
+            dist/releases/ironroot-darwin-amd64.tar.gz
+            dist/releases/ironroot-darwin-arm64.tar.gz
+            dist/releases/checksums.txt
+          generate_release_notes: true
