@@ -42,3 +42,4 @@ Read these pages before deploying IronRoot in production:
 - [OpenTelemetry Architecture](telemetry.md)
 - [Security Boundaries](trust-boundaries.md)
 - [Airgap-First Architecture](airgap.md)
+- [Zero-Trust & Air-Gap Security Architecture](zero-trust-airgap.md)
