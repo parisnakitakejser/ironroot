@@ -283,21 +283,9 @@ Contributors should edit source docs under `docs/`, preview with `just docs-serv
 
 ## Roadmap
 
-IronRoot is in active development. Below is our current feature roadmap. For the full roadmap or to request a new feature, see [ROADMAP.md](ROADMAP.md).
+IronRoot is in active development. Our feature roadmap is grouped into key focus areas including server core & binary distribution, cloud-native deployments, CLI & console tooling, security, and ecosystem integrations.
 
-### 🚀 Near-Term (Planned)
-- [ ] **PostgreSQL backend** – Support high-availability, clustered deployments alongside SQLite.
-- [ ] **CRL & OCSP support** – Real-time certificate validation and revocation checking.
-- [ ] **mTLS support** – Secure server-to-agent and server-to-admin communication.
-- [ ] **Admin API for token lifecycle** – Programmatically manage bootstrap and enrollment tokens.
-- [ ] **CA generation & retirement workflows** – Automated promotion, rollover, and graceful retirement of issuing intermediates.
-
-### 🔮 Future Ideas
-- **SPIFFE & cert-manager integration** – Native Kubernetes credential and zero-trust identity provisioning.
-- **TPM & Hardware-backed identities** – Secure private key storage using local hardware modules.
-- **Airgap package synchronization** – Streamlined off-grid distribution of binaries, containers, and charts.
-- **SSH certificate support** – Host and user SSH key management built directly into the CA.
-- **GitOps integration & Multi-cluster support** – Continuous delivery workflows for multi-region PKI.
+For the detailed roadmap, including planned features, high-availability plans, and future research areas, see [ROADMAP.md](ROADMAP.md).
 
 ## Project links
 
